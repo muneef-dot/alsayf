@@ -3,48 +3,58 @@
 <head>
 <meta charset="UTF-8">
 <title>لوحة تحكم المسؤول</title>
-<!-- الرابط السابق لا يزال صحيحاً، قمت فقط بتصحيح دالة العرض -->
-<script>
-// هذه الدالة ستحل مشكلة الشاشة البيضاء في admin.html
-function showSection(name) {
-  // إخفاء الكل
-  ['sec-dashboard', 'sec-pending', 'sec-families', 'sec-all', 'sec-tree'].forEach(s => {
-    document.getElementById(s)?.classList.add('hidden');
-  });
-  // إظهار المطلوب
-  document.getElementById('sec-' + name)?.classList.remove('hidden');
-  
-  // إذا كانت الشجرة، قم برسمها
-  if(name === 'tree') drawTree();
-}
-
-function drawTree() {
-    const container = document.getElementById('tree-container');
-    if(!container) return;
-    let html = '<div style="font-family:Cairo; direction:rtl;">';
-    DB.forEach(f => {
-        html += `<div style="margin-bottom:15px; padding:10px; border-right:4px solid var(--gold); background:#fff;">
-                 <h3 style="color:var(--dark)">${f.headName}</h3>`;
-        const children = DB.filter(x => x.members && x.members.some(m => m.fatherName === f.headName));
-        children.forEach(child => {
-            html += `<div style="margin-right:20px; padding:5px; border-bottom:1px solid #eee;">${child.headName}</div>`;
-        });
-        html += `</div>`;
-    });
-    html += '</div>';
-    container.innerHTML = html;
-}
-</script>
-<!-- ... ضع بقية الكود (التصميم والأزرار) كما كان سابقاً ... -->
+<style>
+  body { font-family: sans-serif; padding: 20px; background: #f4f4f4; }
+  .hidden { display: none; }
+  .card { background: white; padding: 20px; margin-bottom: 10px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+</style>
 </head>
 <body>
-    <!-- تأكد أن السكشن موجود في ملفك الأصلي -->
-    <div id="sec-tree" class="hidden">
-        <div class="topbar"><h1>شجرة العائلة التفاعلية</h1></div>
-        <div class="section">
-            <div class="section-hd"><h2>تسلسل الأجيال</h2></div>
-            <div id="tree-container" style="padding:2rem;"></div>
-        </div>
+
+<div id="login-sc">
+  <h3>دخول المسؤول</h3>
+  <input type="password" id="pw" placeholder="كلمة المرور">
+  <button onclick="doLogin()">دخول</button>
+</div>
+
+<div id="app" class="hidden">
+  <h2>لوحة التحكم</h2>
+  <button onclick="logout()">تسجيل خروج</button>
+  <div id="fam-list"></div>
+</div>
+
+<script>
+const ADMIN_PASSWORD = 'Admin@AlSayf2026';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzdKT3x1nSjBCFC5Feg1TbzB2WCJGRE2x9V1NXexUzZE7520r_cK7002sGx2OYPKCUY/exec';
+let DB = [];
+
+function doLogin() {
+  if (document.getElementById('pw').value === ADMIN_PASSWORD) {
+    document.getElementById('login-sc').classList.add('hidden');
+    document.getElementById('app').classList.remove('hidden');
+    loadData();
+  } else { alert('كلمة المرور خطأ'); }
+}
+
+function loadData() {
+  fetch(SCRIPT_URL + '?action=getFamilies')
+    .then(r => r.json())
+    .then(d => {
+      DB = d.families || [];
+      renderFamilies();
+    });
+}
+
+function renderFamilies() {
+  const list = document.getElementById('fam-list');
+  list.innerHTML = DB.map(f => `
+    <div class="card">
+      <strong>${f.headName}</strong> - ${f.city}
     </div>
+  `).join('');
+}
+
+function logout() { location.reload(); }
+</script>
 </body>
 </html>
