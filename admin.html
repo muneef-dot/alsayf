@@ -429,7 +429,7 @@ window.addEventListener('load', () => {
 async function loadData() {
   spinner(true);
   try {
-    const r = await fetch(SCRIPT_URL + '?action=getFamilies', { cache: 'no-store' });
+    const r = await fetch(SCRIPT_URL + '?action=getFamilies', { cache: 'no-store', mode: 'cors' });
     const d = await r.json();
     DB = d.families || [];
   } catch (e) {
@@ -576,7 +576,7 @@ async function approveFamily(id) {
   if (!f) return;
   f.approval = 'approved';
   spinner(true);
-  try { await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type':'text/plain'}, body: JSON.stringify({...f, action:'saveFamily'}) }); }
+  try { await jsonpSave(SCRIPT_URL, {...f, action:'saveFamily'}); }
   catch (e) {}
   updateStats(); renderCurrentSection(); toast('✅ تم الاعتماد بنجاح');
   spinner(false);
@@ -722,7 +722,7 @@ async function saveEdit() {
     timestamp: existing?.timestamp || Date.now(),
   };
   spinner(true);
-  try { await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type':'text/plain'}, body: JSON.stringify({...family, action:'saveFamily'}) }); }
+  try { await jsonpSave(SCRIPT_URL, {...family, action:'saveFamily'}); }
   catch (e) {}
   if (eid) { const idx = DB.findIndex(x => x.id === eid); if (idx >= 0) DB[idx] = family; }
   else DB.unshift(family);
@@ -745,7 +745,7 @@ function confirmDelete(id) {
 
 async function executeDelete(id) {
   closeConfirm(); spinner(true);
-  try { await fetch(SCRIPT_URL + '?action=deleteFamily&id=' + id); }
+  try { await jsonpDelete(SCRIPT_URL, id); }
   catch (e) {}
   DB = DB.filter(x => x.id !== id);
   closeDetail(); updateStats(); renderCurrentSection(); toast('🗑️ تم الحذف');
@@ -760,6 +760,27 @@ function calcAge(d) { if (!d) return ''; return Math.floor((Date.now() - new Dat
 function spinner(s) { document.getElementById('spin-ov').classList.toggle('hidden', !s); }
 function toast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3500); }
 document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeEditModal(); closeConfirm(); closeDetail(); } });
+
+function jsonpSave(url, data) {
+  return new Promise((resolve, reject) => {
+    const cbName = 'cb_' + Date.now();
+    window[cbName] = function(res) { delete window[cbName]; document.head.removeChild(s); resolve(res); };
+    const s = document.createElement('script');
+    s.src = url + '?action=saveFamily&data=' + encodeURIComponent(JSON.stringify(data)) + '&callback=' + cbName;
+    s.onerror = () => { delete window[cbName]; reject(new Error('err')); };
+    document.head.appendChild(s);
+  });
+}
+function jsonpDelete(url, id) {
+  return new Promise((resolve, reject) => {
+    const cbName = 'cb_' + Date.now();
+    window[cbName] = function(res) { delete window[cbName]; document.head.removeChild(s); resolve(res); };
+    const s = document.createElement('script');
+    s.src = url + '?action=deleteFamily&id=' + id + '&callback=' + cbName;
+    s.onerror = () => { delete window[cbName]; reject(new Error('err')); };
+    document.head.appendChild(s);
+  });
+}
 </script>
 </body>
 </html>
