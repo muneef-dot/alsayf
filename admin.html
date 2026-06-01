@@ -192,6 +192,7 @@ body{font-family:'Cairo',sans-serif;background:#f5f0e8;color:var(--text);min-hei
 <div class="spin-ov hidden" id="spin-ov"><div class="spin"></div></div>
 <div class="toast" id="toast"></div>
 
+<!-- ========== LOGIN ========== -->
 <div class="login-sc" id="login-sc">
   <div class="login-box">
     <div class="login-icon">🛡️</div>
@@ -203,8 +204,10 @@ body{font-family:'Cairo',sans-serif;background:#f5f0e8;color:var(--text);min-hei
   </div>
 </div>
 
+<!-- ========== APP ========== -->
 <div id="app" class="hidden">
 
+  <!-- SIDEBAR -->
   <div class="sidebar">
     <div class="sidebar-logo">
       <div class="sb-emblem">☽</div>
@@ -230,8 +233,10 @@ body{font-family:'Cairo',sans-serif;background:#f5f0e8;color:var(--text);min-hei
     </div>
   </div>
 
+  <!-- MAIN -->
   <div class="main-content">
 
+    <!-- DASHBOARD -->
     <div id="sec-dashboard">
       <div class="topbar">
         <h1>لوحة التحكم</h1>
@@ -245,6 +250,7 @@ body{font-family:'Cairo',sans-serif;background:#f5f0e8;color:var(--text);min-hei
         <div class="stat-card"><span class="stat-icon">⚠️</span><div><div class="stat-num" id="st-miss">—</div><div class="stat-lbl">صور ناقصة</div></div></div>
       </div>
 
+      <!-- Quick pending -->
       <div class="section" id="dash-pending-sec">
         <div class="section-hd">
           <span style="font-size:1.1rem">⏳</span>
@@ -255,6 +261,7 @@ body{font-family:'Cairo',sans-serif;background:#f5f0e8;color:var(--text);min-hei
       </div>
     </div>
 
+    <!-- PENDING -->
     <div id="sec-pending" class="hidden">
       <div class="topbar"><h1>قيد المراجعة</h1></div>
       <div class="section">
@@ -263,6 +270,7 @@ body{font-family:'Cairo',sans-serif;background:#f5f0e8;color:var(--text);min-hei
       </div>
     </div>
 
+    <!-- APPROVED FAMILIES -->
     <div id="sec-families" class="hidden">
       <div class="topbar">
         <h1>الأسر المعتمدة</h1>
@@ -280,6 +288,7 @@ body{font-family:'Cairo',sans-serif;background:#f5f0e8;color:var(--text);min-hei
       </div>
     </div>
 
+    <!-- ALL -->
     <div id="sec-all" class="hidden">
       <div class="topbar">
         <h1>جميع السجلات</h1>
@@ -291,7 +300,10 @@ body{font-family:'Cairo',sans-serif;background:#f5f0e8;color:var(--text);min-hei
       </div>
     </div>
 
-  </div><div class="detail-panel" id="detail-panel">
+  </div><!-- main-content -->
+
+  <!-- DETAIL PANEL -->
+  <div class="detail-panel" id="detail-panel">
     <div class="dp-hd">
       <button class="dp-close" onclick="closeDetail()">✕ إغلاق</button>
       <div id="dp-photo-wrap"></div>
@@ -313,7 +325,10 @@ body{font-family:'Cairo',sans-serif;background:#f5f0e8;color:var(--text);min-hei
     </div>
   </div>
 
-</div><div class="modal-bd hidden" id="edit-modal">
+</div><!-- app -->
+
+<!-- EDIT MODAL -->
+<div class="modal-bd hidden" id="edit-modal">
   <div class="modal">
     <div class="modal-hd"><h2 id="edit-modal-title">تعديل بيانات الأسرة</h2><button class="modal-close" onclick="closeEditModal()">✕</button></div>
     <div class="modal-body">
@@ -362,6 +377,7 @@ body{font-family:'Cairo',sans-serif;background:#f5f0e8;color:var(--text);min-hei
   </div>
 </div>
 
+<!-- CONFIRM DELETE MODAL -->
 <div class="modal-bd hidden" id="confirm-modal">
   <div class="confirm-modal">
     <div class="confirm-icon">⚠️</div>
@@ -376,8 +392,8 @@ body{font-family:'Cairo',sans-serif;background:#f5f0e8;color:var(--text);min-hei
 
 <script>
 // ============================================================
-const ADMIN_PASSWORD = 'Admin@AlSayf2026';   
-const SCRIPT_URL     = 'https://script.google.com/macros/s/AKfycbxth3O6KQBrql6YxwzfFIW1JINGwj6uLthOv-riXAA9BKigkqiw72EhIpTM0f0FTTqY/exec';
+const ADMIN_PASSWORD = 'Admin@AlSayf2026';
+const SCRIPT_URL     = 'https://script.google.com/macros/s/AKfycbzdKT3x1nSjBCFC5Feg1TbzB2WCJGRE2x9V1NXexUzZE7520r_cK7002sGx2OYPKCUY/exec';
 // ============================================================
 
 let DB = [], currentDetailId = null, editMembers = [], editHeadPhoto = null;
@@ -718,13 +734,12 @@ async function saveEdit() {
 
 function closeEditModal() { document.getElementById('edit-modal').classList.add('hidden'); }
 
-// ===== DELETE =====
 let deleteTargetId = null;
 function confirmDelete(id) {
   const f = DB.find(x => x.id === id);
   if (!f) return;
   deleteTargetId = id;
-  document.getElementById('confirm-sub').textContent = `سيتم حذف بيانات أسرة "${f.headName}" بالكامل بما فيها أفراد الأسرة. لا يمكن التراجع.`;
+  document.getElementById('confirm-sub').textContent = `سيتم حذف بيانات أسرة "${f.headName}" بالكامل. لا يمكن التراجع.`;
   document.getElementById('confirm-action-btn').onclick = () => executeDelete(id);
   document.getElementById('confirm-modal').classList.remove('hidden');
 }
@@ -733,4 +748,18 @@ async function executeDelete(id) {
   closeConfirm(); spinner(true);
   try { await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({id: id, action: 'deleteFamily'}) }); }
   catch (e) {}
-  DB = DB.filter(x => x.id !== id
+  DB = DB.filter(x => x.id !== id);
+  closeDetail(); updateStats(); renderCurrentSection(); toast('🗑️ تم الحذف');
+  spinner(false);
+}
+
+function closeConfirm() { document.getElementById('confirm-modal').classList.add('hidden'); }
+
+function ini(n = '') { const p = n.trim().split(' '); return p.length >= 2 ? p[0][0] + p[p.length - 1][0] : (n[0] || '؟'); }
+function calcAge(d) { if (!d) return ''; return Math.floor((Date.now() - new Date(d)) / 31557600000); }
+function spinner(s) { document.getElementById('spin-ov').classList.toggle('hidden', !s); }
+function toast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3500); }
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeEditModal(); closeConfirm(); closeDetail(); } });
+</script>
+</body>
+</html>
