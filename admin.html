@@ -3,300 +3,337 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تسجيل بيانات أسرة آل سيف قاسم العلامة</title>
-    <!-- استدعاء خط كايرو وأيقونات وتصميم تيلويند الحديث موحد ومتناسق -->
+    <title>لوحة تحكم المسؤول | سجل آل سيف قاسم العلامة</title>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body { font-family: 'Cairo', sans-serif; background-color: #f4f6f9; }
-        .step-active { color: #1e3a8a; border-color: #1e3a8a; font-weight: 700; border-bottom-width: 2px; }
+        body { font-family: 'Cairo', sans-serif; background-color: #f0f4f8; }
+        .tab-btn-active { background-color: #1e3a8a; color: white; }
     </style>
 </head>
-<body class="text-gray-800 antialiased p-2 sm:p-6">
+<body class="text-gray-800 antialiased p-3 sm:p-6">
 
-    <div class="max-w-3xl mx-auto bg-white rounded-2xl shadow-xl overflow-hidden mt-4">
-        <div class="bg-gradient-to-r from-blue-900 to-indigo-900 text-white text-center py-8 px-4 relative">
-            <h1 class="text-2xl sm:text-3xl font-bold mb-2">سجل عائلة آل سيف قاسم العلامة</h1>
-            <p class="text-blue-200 text-sm sm:text-base">استمارة حصر أفراد الأسرة وجمع البيانات والتوثيق التلقائي</p>
+    <!-- شاشة التحقق الآمن والدخول السري -->
+    <div id="loginScreen" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl p-6 sm:p-8 max-w-md w-full border border-gray-100 text-center">
+            <div class="w-16 h-16 bg-blue-50 text-blue-900 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl shadow-sm">
+                <i class="fa-solid fa-user-shield"></i>
+            </div>
+            <h2 class="text-xl font-bold text-gray-900 mb-2">تسجيل دخول الإدارة والتوثيق</h2>
+            <p class="text-gray-500 text-xs mb-6">يرجى كتابة كلمة المرور المخصصة للمسؤول لعرض كشوفات وفرز الأسرة</p>
+            <div class="space-y-4">
+                <input type="password" id="adminPasswordInput" class="w-full px-4 py-2.5 rounded-xl border border-gray-300 text-center text-lg tracking-widest focus:outline-none focus:ring-2 focus:ring-blue-900 focus:border-transparent" placeholder="••••••••">
+                <button onclick="checkAdminAuthorization()" class="w-full bg-blue-900 text-white font-bold py-2.5 rounded-xl hover:bg-blue-950 transition shadow-md">دخول لوحة التحكم</button>
+                <div id="loginError" class="hidden text-red-600 text-xs font-bold mt-2">⚠️ كلمة المرور خاطئة، يرجى المحاولة مجدداً.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- لوحة التحكم الرئيسية -->
+    <div id="adminPanel" class="hidden max-w-6xl mx-auto space-y-6">
+        
+        <!-- الهيدر العلوي -->
+        <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+                <h1 class="text-xl sm:text-2xl font-bold text-blue-950 flex items-center gap-2">
+                    <i class="fa-solid fa-chart-line text-blue-800"></i><span>لوحة إدارة وفرز أسرة آل سيف قاسم العلامة</span>
+                </h1>
+                <p class="text-gray-400 text-xs">مراقبة الطلبات الجديدة، المراجعة والفرز التلقائي المترابط</p>
+            </div>
+            <button onclick="logoutAdmin()" class="text-xs bg-red-50 text-red-700 hover:bg-red-100 font-semibold px-3 py-1.5 rounded-lg transition flex items-center gap-1">
+                <i class="fa-solid fa-arrow-right-from-bracket"></i><span>خروج آمن</span>
+            </button>
         </div>
 
-        <div class="flex justify-around border-b border-gray-100 bg-gray-50 py-4 px-2 text-xs sm:text-sm text-gray-400">
-            <div id="step1-badge" class="step-active flex items-center gap-2 pb-1"><i class="fa-solid fa-house"></i><span>1. بيانات الأسرة</span></div>
-            <div id="step2-badge" class="flex items-center gap-2 pb-1"><i class="fa-solid fa-users"></i><span>2. أفراد الأسرة</span></div>
-            <div id="step3-badge" class="flex items-center gap-2 pb-1"><i class="fa-solid fa-check-double"></i><span>3. مراجعة وإرسال</span></div>
+        <!-- كروت الإحصائيات -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+            <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100 text-center">
+                <div class="text-xs text-gray-400 font-semibold">إجمالي الأسر</div>
+                <div id="statFamilies" class="text-2xl font-bold text-blue-950 mt-1">0</div>
+            </div>
+            <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100 text-center">
+                <div class="text-xs text-gray-400 font-semibold">إجمالي الأفراد</div>
+                <div id="statMembers" class="text-2xl font-bold text-emerald-950 mt-1">0</div>
+            </div>
+            <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100 text-center relative overflow-hidden">
+                <div class="text-xs text-gray-400 font-semibold flex items-center justify-center gap-1">
+                    <span>طلبات معلقة</span>
+                    <span id="pendingPulse" class="hidden w-2 h-2 rounded-full bg-red-600 animate-ping"></span>
+                </div>
+                <div id="statPending" class="text-2xl font-bold text-red-600 mt-1">0</div>
+            </div>
+            <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100 text-center">
+                <div class="text-xs text-gray-400 font-semibold text-amber-700"><i class="fa-solid fa-triangle-exclamation"></i> ذكور بلا صور</div>
+                <div id="statNoPhotos" class="text-2xl font-bold text-amber-700 mt-1">0</div>
+            </div>
         </div>
 
-        <form id="registryForm" class="p-4 sm:p-8 space-y-6">
+        <!-- شريط التصفية والبحث -->
+        <div class="bg-white rounded-xl p-4 shadow-sm border border-gray-100 flex flex-col md:flex-row gap-3 items-center justify-between">
+            <div class="relative w-full md:w-72">
+                <input type="text" id="adminSearchInput" oninput="filterAdminData()" class="w-full pr-9 pl-4 py-2 text-sm rounded-xl border border-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-900" placeholder="البحث بالاسم، المدينة أو الحي...">
+                <i class="fa-solid fa-magnifying-glass absolute top-3 right-3.5 text-gray-400 text-xs"></i>
+            </div>
             
-            <div id="step1" class="space-y-5">
-                <div class="border-r-4 border-blue-800 pr-3 mb-4">
-                    <h2 class="text-lg font-bold text-blue-950">بيانات الأسرة والسكن</h2>
-                    <p class="text-gray-500 text-xs">يرجى ملء تفاصيل رب الأسرة الحالي ومكان الإقامة الدائم</p>
-                </div>
-                <div>
-                    <label class="block text-sm font-semibold mb-1 text-gray-700">اسم رب الأسرة كاملاً <span class="text-red-500">*</span></label>
-                    <input type="text" id="headOfFamily" required class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-800 focus:border-transparent transition" placeholder="مثال: سيف قاسم أحمد آل سيف">
-                </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-semibold mb-1 text-gray-700">مدينة الإقامة الحالية <span class="text-red-500">*</span></label>
-                        <input type="text" id="city" required class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-800 focus:border-transparent transition" placeholder="مثال: صنعاء، تعز، الرياض...">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-semibold mb-1 text-gray-700">الحي / المنطقة <span class="text-red-500">*</span></label>
-                        <input type="text" id="neighborhood" required class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-800 focus:border-transparent transition" placeholder="مثال: حي الروضة، حارة الأمل...">
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-sm font-semibold mb-1 text-gray-700">ملاحظات عامة عن الأسرة (اختياري)</label>
-                    <textarea id="familyNotes" rows="3" class="w-full px-4 py-2.5 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-800 focus:border-transparent transition" placeholder="أي تفاصيل إضافية تود ذكرها للإدارة..."></textarea>
-                </div>
-                <div class="flex justify-end pt-4">
-                    <button type="button" onclick="goToStep(2)" class="bg-blue-900 text-white px-6 py-2.5 rounded-xl font-semibold hover:bg-blue-950 shadow-md transition flex items-center gap-2"><span>التالي (إضافة الأفراد)</span><i class="fa-solid fa-arrow-left"></i></button>
-                </div>
+            <div class="flex gap-2 w-full md:w-auto overflow-x-auto pb-1 md:pb-0">
+                <button id="tab-pending" onclick="switchTab('pending')" class="tab-btn-active text-xs font-bold px-4 py-2 rounded-xl transition cursor-pointer whitespace-nowrap">قيد المراجعة والمعلقة</button>
+                <button id="tab-approved" onclick="switchTab('approved')" class="bg-gray-100 text-gray-600 text-xs font-bold px-4 py-2 rounded-xl transition cursor-pointer whitespace-nowrap">الأسر المعتمدة نهائياً</button>
+                <button id="tab-allMembers" onclick="switchTab('allMembers')" class="bg-gray-100 text-gray-600 text-xs font-bold px-4 py-2 rounded-xl transition cursor-pointer whitespace-nowrap">كافة الأفراد بالميلاد (الأقدم للأحدث)</button>
             </div>
+        </div>
 
-            <div id="step2" class="hidden space-y-6">
-                <div class="border-r-4 border-blue-800 pr-3 flex justify-between items-center">
-                    <div>
-                        <h2 class="text-lg font-bold text-blue-950">إضافة الأبناء وأفراد الأسرة</h2>
-                        <p class="text-gray-500 text-xs">أضف جميع الأفراد التابعين لرب الأسرة (الزوجات، الأبناء والبنات)</p>
-                    </div>
-                    <button type="button" onclick="addMemberCard()" class="bg-green-700 text-white text-xs px-3 py-2 rounded-lg hover:bg-green-800 font-bold shadow-sm transition flex items-center gap-1"><i class="fa-solid fa-user-plus"></i><span>إضافة فرد</span></button>
-                </div>
+        <!-- حاوية عرض البيانات -->
+        <div id="dataLoadingStatus" class="bg-white rounded-xl p-12 text-center text-gray-400 font-semibold shadow-sm border border-gray-100">
+            <i class="fa-solid fa-circle-notch animate-spin text-2xl text-blue-900 mb-3 block"></i>
+            <span>جاري جلب وفهرسة البيانات من السحابة...</span>
+        </div>
 
-                <div id="membersContainer" class="space-y-4"></div>
+        <div id="adminContentContainer" class="space-y-4">
+            <!-- سيتم ملء البيانات ديناميكياً هنا -->
+        </div>
 
-                <div class="flex justify-between pt-4 border-t border-gray-100">
-                    <button type="button" onclick="goToStep(1)" class="bg-gray-200 text-gray-700 px-6 py-2.5 rounded-xl font-semibold hover:bg-gray-300 transition flex items-center gap-2"><i class="fa-solid fa-arrow-right"></i><span>السابق</span></button>
-                    <button type="button" onclick="goToStep(3)" class="bg-blue-900 text-white px-6 py-2.5 rounded-xl font-semibold hover:bg-blue-950 shadow-md transition flex items-center gap-2"><span>التالي (المراجعة النهائية)</span><i class="fa-solid fa-arrow-left"></i></button>
-                </div>
-            </div>
-
-            <div id="step3" class="hidden space-y-6">
-                <div class="border-r-4 border-blue-800 pr-3">
-                    <h2 class="text-lg font-bold text-blue-950">مراجعة وتأكيد البيانات</h2>
-                    <p class="text-gray-500 text-xs">يرجى التأكد من صحة كافة الأسماء قبل الضغط على إرسال</p>
-                </div>
-
-                <div id="reviewBox" class="bg-blue-50 p-4 rounded-xl border border-blue-100 space-y-4 text-sm"></div>
-
-                <div id="statusMessage" class="hidden p-4 rounded-xl text-center font-bold text-sm"></div>
-
-                <div class="flex justify-between pt-4 border-t border-gray-100">
-                    <button type="button" id="prevBtnFinal" onclick="goToStep(2)" class="bg-gray-200 text-gray-700 px-6 py-2.5 rounded-xl font-semibold hover:bg-gray-300 transition flex items-center gap-2"><i class="fa-solid fa-arrow-right"></i><span>السابق للتعديل</span></button>
-                    <button type="button" id="submitBtn" onclick="submitFormEntirely()" class="bg-emerald-700 text-white px-8 py-2.5 rounded-xl font-bold hover:bg-emerald-800 shadow-md transition flex items-center gap-2"><i class="fa-solid fa-cloud-arrow-up"></i><span>تأكيد وإرسال البيانات تلقائياً</span></button>
-                </div>
-            </div>
-
-        </form>
     </div>
 
     <script>
+        // رابطك الخاص الذي يحل مشكلة الإرسال
         const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxth3O6KQBrql6YxwzfFIW1JINGwj6uLthOv-riXAA9BKigkqiw72EhIpTM0f0FTTqY/exec";
-        let memberCount = 0;
+        const ADMIN_SECRET = "Admin@AlSayf2026";
+        
+        let rawDataCache = { families: [], members: [] };
+        let currentActiveTab = "pending";
 
-        function goToStep(stepNum) {
-            document.getElementById('step1').classList.add('hidden');
-            document.getElementById('step2').classList.add('hidden');
-            document.getElementById('step3').classList.add('hidden');
-            document.getElementById('step1-badge').classList.remove('step-active');
-            document.getElementById('step2-badge').classList.remove('step-active');
-            document.getElementById('step3-badge').classList.remove('step-active');
-
-            document.getElementById('step' + stepNum).classList.remove('hidden');
-            document.getElementById('step' + stepNum + '-badge').classList.add('step-active');
-
-            if(stepNum === 3) {
-                generateReviewSummary();
+        window.onload = function() {
+            if(sessionStorage.getItem('adminAuth') === 'true') {
+                document.getElementById('loginScreen').remove();
+                document.getElementById('adminPanel').classList.remove('hidden');
+                refreshDataFromServer();
             }
         }
 
-        function addMemberCard() {
-            memberCount++;
-            const container = document.getElementById('membersContainer');
-            const card = document.createElement('div');
-            card.id = `memberCard_${memberCount}`;
-            card.className = "bg-gray-50 border border-gray-200 rounded-xl p-4 relative space-y-3 transition shadow-sm";
-            
-            card.innerHTML = `
-                <button type="button" onclick="removeMemberCard(${memberCount})" class="absolute top-3 left-3 text-red-500 hover:text-red-700 transition" title="حذف الفرد"><i class="fa-solid fa-trash-can"></i></button>
-                <div class="font-bold text-gray-700 text-sm border-b border-gray-200 pb-1 mb-2 flex items-center gap-2 text-blue-900">
-                    <i class="fa-solid fa-user text-xs"></i><span>بيانات الفرد #${memberCount}</span>
-                </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-xs font-semibold mb-1 text-gray-600">الاسم الكامل <span class="text-red-500">*</span></label>
-                        <input type="text" class="m-fullName w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-1 focus:ring-blue-800" required placeholder="الاسم رباعي">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold mb-1 text-gray-600">اللقب / الكنية (اختياري)</label>
-                        <input type="text" class="m-nickname w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-1 focus:ring-blue-800" placeholder="مثال: أبو سيف">
-                    </div>
-                </div>
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div>
-                        <label class="block text-xs font-semibold mb-1 text-gray-600">الجنس <span class="text-red-500">*</span></label>
-                        <select class="m-gender w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-1 focus:ring-blue-800" onchange="togglePhotoInput(${memberCount}, this.value)" required>
-                            <option value="ذكر">ذكر</option>
-                            <option value="أنثى">أنثى</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold mb-1 text-gray-600">تاريخ الميلاد <span class="text-red-500">*</span></label>
-                        <input type="date" class="m-birthDate w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-1 focus:ring-blue-800" required>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold mb-1 text-gray-600">المهنة / الوظيفة</label>
-                        <input type="text" class="m-job w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-1 focus:ring-blue-800" placeholder="مثال: مهندس، طالب...">
-                    </div>
-                </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-xs font-semibold mb-1 text-gray-600">الحالة الحالية <span class="text-red-500">*</span></label>
-                        <select class="m-statusLife w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-1 focus:ring-blue-800" required>
-                            <option value="حي">حي يرزق</option>
-                            <option value="متوفى">متوفى رحمة الله عليه</option>
-                        </select>
-                    </div>
-                    <div id="photoContainer_${memberCount}">
-                        <label class="block text-xs font-semibold mb-1 text-gray-600">الصورة الشخصية <span class="text-red-500">* للذكور</span></label>
-                        <input type="file" accept="image/*" class="m-photo w-full text-xs text-gray-500 file:mr-4 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-900 hover:file:bg-blue-100" onchange="processImageToBase64(this, ${memberCount})">
-                        <input type="hidden" class="m-photoBase64">
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-xs font-semibold mb-1 text-gray-600">نبذة مختصرة (اختياري)</label>
-                    <input type="text" class="m-bio w-full px-3 py-2 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-1 focus:ring-blue-800" placeholder="اكتب نبذة قصيرة لتضاف لملفه التاريخي بالأسرة...">
-                </div>
-            `;
-            container.appendChild(card);
-        }
-
-        function togglePhotoInput(id, gender) {
-            const container = document.getElementById(`photoContainer_${id}`);
-            if (gender === 'أنثى') {
-                container.classList.add('invisible');
-                container.querySelector('.m-photo').required = false;
-                container.querySelector('.m-photoBase64').value = "";
+        function checkAdminAuthorization() {
+            const val = document.getElementById('adminPasswordInput').value;
+            if(val === ADMIN_SECRET) {
+                sessionStorage.setItem('adminAuth', 'true');
+                document.getElementById('loginScreen').remove();
+                document.getElementById('adminPanel').classList.remove('hidden');
+                refreshDataFromServer();
             } else {
-                container.classList.remove('invisible');
+                document.getElementById('loginError').classList.remove('hidden');
             }
         }
 
-        function removeMemberCard(id) {
-            const card = document.getElementById(`memberCard_${id}`);
-            if (card) card.remove();
+        function logoutAdmin() {
+            sessionStorage.removeItem('adminAuth');
+            window.location.reload();
         }
 
-        function processImageToBase64(input, id) {
-            const file = input.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const card = document.getElementById(`memberCard_${id}`);
-                    card.querySelector('.m-photoBase64').value = e.target.result;
-                };
-                reader.readAsDataURL(file);
-            }
-        }
-
-        function generateReviewSummary() {
-            const head = document.getElementById('headOfFamily').value;
-            const city = document.getElementById('city').value;
-            const neighborhood = document.getElementById('neighborhood').value;
+        function refreshDataFromServer() {
+            document.getElementById('dataLoadingStatus').classList.remove('hidden');
+            document.getElementById('adminContentContainer').innerHTML = "";
             
-            let html = `
-                <div><strong>رب الأسرة الحالي:</strong> ${head || '<span class="text-red-500">فارغ!</span>'}</div>
-                <div><strong>مقر وسكن الأسرة:</strong> ${city} - ${neighborhood}</div>
-                <div class="border-t border-blue-200 pt-2 font-bold text-blue-950 mb-1">قائمة الأفراد:</div>
-                <ul class="list-disc list-inside space-y-1 text-xs">
-            `;
-
-            const cards = document.querySelectorAll('#membersContainer > div');
-            if(cards.length === 0) {
-                html += `<li class="text-amber-600 font-semibold">لم تقم بإضافة أفراد، سيتم إرسال بيانات رب الأسرة فقط!</li>`;
-            } else {
-                cards.forEach(card => {
-                    const name = card.querySelector('.m-fullName').value;
-                    const gender = card.querySelector('.m-gender').value;
-                    const hasPhoto = card.querySelector('.m-photoBase64').value ? "مع صورة" : "بدون صورة";
-                    html += `<li>${name || 'اسم غير مكتوب'} (${gender}) - ${hasPhoto}</li>`;
-                });
-            }
-            html += `</ul>`;
-            document.getElementById('reviewBox').innerHTML = html;
-        }
-
-        function submitFormEntirely() {
-            if(!document.getElementById('headOfFamily').value || !document.getElementById('city').value) {
-                alert('يرجى التأكد من ملء جميع الحقول الإلزامية في الخطوة الأولى أولاً.');
-                goToStep(1);
-                return;
-            }
-
-            const statusMsg = document.getElementById('statusMessage');
-            const submitBtn = document.getElementById('submitBtn');
-            const prevBtn = document.getElementById('prevBtnFinal');
-
-            statusMsg.className = "p-4 rounded-xl text-center font-bold text-sm bg-blue-100 text-blue-900 flex items-center justify-center gap-2 animate-pulse";
-            statusMsg.innerHTML = `<i class="fa-solid fa-circle-notch animate-spin"></i><span>جاري إرسال البيانات... يرجى الانتظار</span>`;
-            statusMsg.classList.remove('hidden');
-
-            submitBtn.disabled = true;
-            prevBtn.disabled = true;
-
-            const payload = {
-                action: 'submitFamily',
-                family: {
-                    headOfFamily: document.getElementById('headOfFamily').value,
-                    city: document.getElementById('city').value,
-                    neighborhood: document.getElementById('neighborhood').value,
-                    notes: document.getElementById('familyNotes').value
-                },
-                members: []
-            };
-
-            const cards = document.querySelectorAll('#membersContainer > div');
-            cards.forEach(card => {
-                payload.members.push({
-                    fullName: card.querySelector('.m-fullName').value,
-                    nickname: card.querySelector('.m-nickname').value,
-                    gender: card.querySelector('.m-gender').value,
-                    birthDate: card.querySelector('.m-birthDate').value,
-                    job: card.querySelector('.m-job').value,
-                    statusLife: card.querySelector('.m-statusLife').value,
-                    bio: card.querySelector('.m-bio').value,
-                    photoBase64: card.querySelector('.m-photoBase64').value
-                });
+            fetch(`${APPS_SCRIPT_URL}?action=getData`)
+            .then(res => res.json())
+            .then(data => {
+                rawDataCache = data;
+                calculateStatsAndIndicators();
+                renderCurrentTab();
+                document.getElementById('dataLoadingStatus').classList.add('hidden');
+            })
+            .catch(err => {
+                document.getElementById('dataLoadingStatus').innerHTML = `
+                    <div class="text-amber-700 font-bold">
+                        <i class="fa-solid fa-triangle-exclamation text-xl mb-2 block"></i>
+                        <span>فشل الاتصال المباشر. يرجى التأكد من الرابط.</span>
+                    </div>
+                `;
             });
+        }
 
+        function calculateStatsAndIndicators() {
+            document.getElementById('statFamilies').innerText = rawDataCache.families.length;
+            document.getElementById('statMembers').innerText = rawDataCache.members.length;
+            
+            const pending = rawDataCache.families.filter(f => f.Status !== 'Approved').length;
+            document.getElementById('statPending').innerText = pending;
+            if(pending > 0) document.getElementById('pendingPulse').classList.remove('hidden');
+            else document.getElementById('pendingPulse').classList.add('hidden');
+
+            const malesNoPhoto = rawDataCache.members.filter(m => m.Gender === 'ذكر' && (!m.Photo_URL || m.Photo_URL.trim() === '')).length;
+            document.getElementById('statNoPhotos').innerText = malesNoPhoto;
+        }
+
+        function switchTab(tabName) {
+            currentActiveTab = tabName;
+            document.getElementById('tab-pending').className = "bg-gray-100 text-gray-600 text-xs font-bold px-4 py-2 rounded-xl transition cursor-pointer";
+            document.getElementById('tab-approved').className = "bg-gray-100 text-gray-600 text-xs font-bold px-4 py-2 rounded-xl transition cursor-pointer";
+            document.getElementById('tab-allMembers').className = "bg-gray-100 text-gray-600 text-xs font-bold px-4 py-2 rounded-xl transition cursor-pointer";
+            
+            document.getElementById('tab-' + tabName).className = "tab-btn-active text-xs font-bold px-4 py-2 rounded-xl transition cursor-pointer";
+            renderCurrentTab();
+        }
+
+        function renderCurrentTab() {
+            const container = document.getElementById('adminContentContainer');
+            container.innerHTML = "";
+            const searchVal = document.getElementById('adminSearchInput').value.toLowerCase();
+
+            if (currentActiveTab === 'pending' || currentActiveTab === 'approved') {
+                let families = rawDataCache.families.filter(f => {
+                    const matchesStatus = (currentActiveTab === 'pending') ? (f.Status !== 'Approved') : (f.Status === 'Approved');
+                    const matchesSearch = f.Head_of_Family.toLowerCase().includes(searchVal) || f.City.toLowerCase().includes(searchVal);
+                    return matchesStatus && matchesSearch;
+                });
+
+                if(families.length === 0) {
+                    container.innerHTML = `<div class="bg-white rounded-xl p-8 text-center text-gray-400 text-sm border">لا توجد أي سجلات عائلية مطابقة حالياً في هذا القسم.</div>`;
+                    return;
+                }
+
+                families.forEach(fam => {
+                    let mRows = rawDataCache.members.filter(m => m.Family_ID === fam.Family_ID);
+                    mRows.sort((a, b) => new Date(a.Birth_Date) - new Date(b.Birth_Date));
+
+                    let membersListHtml = "";
+                    let hasMissingMalePhoto = false;
+
+                    mRows.forEach(m => {
+                        const isMale = m.Gender === 'ذكر';
+                        const noPhoto = !m.Photo_URL || m.Photo_URL.trim() === '';
+                        if(isMale && noPhoto) hasMissingMalePhoto = true;
+
+                        membersListHtml += `
+                            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-gray-50 p-2.5 rounded-lg border border-gray-100 text-xs gap-2">
+                                <div class="flex items-center gap-3">
+                                    ${m.Photo_URL ? `<a href="${m.Photo_URL}" target="_blank" class="w-8 h-8 rounded-full overflow-hidden border border-blue-900 block bg-cover bg-center" style="background-image: url('${m.Photo_URL}')" title="عرض الصورة"></a>` : `<div class="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-400"><i class="fa-solid fa-user"></i></div>`}
+                                    <div>
+                                        <div class="font-bold text-gray-900">${m.Full_Name} ${m.Nickname ? `(${m.Nickname})` : ''}</div>
+                                        <div class="text-gray-400">الميلاد: ${m.Birth_Date || 'مجهول'} | المهنة: ${m.Job || 'غير محدد'} | الحالة: ${m.Status_Life}</div>
+                                        ${m.Bio ? `<div class="text-blue-900 mt-0.5 italic">السيرة: ${m.Bio}</div>` : ''}
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold ${isMale ? 'bg-blue-50 text-blue-700' : 'bg-pink-50 text-pink-700'}">${m.Gender}</span>
+                                    ${(isMale && noPhoto) ? `<span class="text-amber-700 bg-amber-50 px-2 py-0.5 rounded font-bold text-[10px] flex items-center gap-1"><i class="fa-solid fa-triangle-exclamation"></i> مطلوبة</span>` : ''}
+                                </div>
+                            </div>
+                        `;
+                    });
+
+                    const fCard = document.createElement('div');
+                    fCard.className = "bg-white rounded-xl p-4 sm:p-5 shadow-sm border border-gray-100 space-y-4";
+                    fCard.innerHTML = `
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-gray-100 pb-3 gap-3">
+                            <div>
+                                <div class="font-bold text-gray-900 text-base flex items-center gap-2">
+                                    <span>أسرة: ${fam.Head_of_Family}</span>
+                                    ${hasMissingMalePhoto ? `<i class="fa-solid fa-circle-exclamation text-amber-600 text-sm animate-bounce" title="ذكور بلا صور"></i>` : ''}
+                                </div>
+                                <div class="text-xs text-gray-400 mt-1"><i class="fa-solid fa-location-dot"></i> ${fam.City} - ${fam.Neighborhood} ${fam.Notes ? `| <span class="text-gray-600">ملاحظة: ${fam.Notes}</span>` : ''}</div>
+                            </div>
+                            <div class="flex items-center gap-2 self-end sm:self-auto">
+                                ${fam.Status !== 'Approved' ? `<button onclick="approveFamilyRow('${fam.Family_ID}')" class="bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs px-3 py-1.5 rounded-lg transition shadow-sm cursor-pointer"><i class="fa-solid fa-circle-check"></i> اعتماد العائلة</button>` : `<span class="bg-green-50 text-green-700 font-bold text-xs px-2.5 py-1 rounded-lg"><i class="fa-solid fa-check"></i> معتمد مسبقاً</span>`}
+                                <button onclick="deleteFamilyRow('${fam.Family_ID}')" class="bg-red-50 hover:bg-red-100 text-red-700 font-bold text-xs px-3 py-1.5 rounded-lg transition cursor-pointer"><i class="fa-solid fa-trash-can"></i> حذف كلي</button>
+                            </div>
+                        </div>
+                        <div class="space-y-2">
+                            <div class="text-xs font-semibold text-gray-400 mb-1">التابعين والأبناء (${mRows.length}):</div>
+                            ${membersListHtml || '<div class="text-xs text-amber-600 italic">لم يتم إضافة أفراد.</div>'}
+                        </div>
+                    `;
+                    container.appendChild(fCard);
+                });
+
+            } else if (currentActiveTab === 'allMembers') {
+                let allM = [...rawDataCache.members];
+                allM.sort((a, b) => new Date(a.Birth_Date) - new Date(b.Birth_Date));
+                
+                if(searchVal) {
+                    allM = allM.filter(m => m.Full_Name.toLowerCase().includes(searchVal) || m.Job.toLowerCase().includes(searchVal));
+                }
+
+                const tableCard = document.createElement('div');
+                tableCard.className = "bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden";
+                
+                let rowsHtml = "";
+                allM.forEach((m, idx) => {
+                    const famObj = rawDataCache.families.find(f => f.Family_ID === m.Family_ID) || { Head_of_Family: 'مجهول' };
+                    rowsHtml += `
+                        <tr class="border-b border-gray-50 hover:bg-slate-50 transition text-xs">
+                            <td class="p-3 font-semibold text-gray-400 text-center">${idx + 1}</td>
+                            <td class="p-3 font-bold text-gray-900">${m.Full_Name}</td>
+                            <td class="p-3 text-center">${m.Gender}</td>
+                            <td class="p-3 text-center font-mono">${m.Birth_Date ? m.Birth_Date.split('T')[0] : 'مجهول'}</td>
+                            <td class="p-3 font-semibold text-blue-900">${famObj.Head_of_Family}</td>
+                            <td class="p-3 text-center">${m.Status_Life}</td>
+                            <td class="p-3 text-center">
+                                ${m.Photo_URL ? `<a href="${m.Photo_URL}" target="_blank" class="text-blue-700 hover:underline font-bold"><i class="fa-solid fa-image"></i> عرض</a>` : (m.Gender === 'ذكر' ? '<span class="text-amber-700 font-bold">⚠️ مطلوبة</span>' : '<span class="text-gray-300">-</span>')}
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                tableCard.innerHTML = `
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-right border-collapse">
+                            <thead>
+                                <tr class="bg-blue-950 text-white text-xs font-bold border-b border-gray-200">
+                                    <th class="p-3 text-center w-12">#</th>
+                                    <th class="p-3">الاسم الكامل للفرد</th>
+                                    <th class="p-3 text-center">الجنس</th>
+                                    <th class="p-3 text-center">تاريخ الميلاد</th>
+                                    <th class="p-3">تابع لأسرة (الأب)</th>
+                                    <th class="p-3 text-center">الحالة</th>
+                                    <th class="p-3 text-center">الصورة</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${rowsHtml || '<tr><td colspan="7" class="p-8 text-center text-gray-400">لا يوجد أفراد مسجلين.</td></tr>'}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+                container.appendChild(tableCard);
+            }
+        }
+
+        function filterAdminData() {
+            renderCurrentTab();
+        }
+
+        function approveFamilyRow(fId) {
+            if(!confirm("هل أنت متأكد من اعتماد ومراجعة بيانات هذه الأسرة؟")) return;
+            
             fetch(APPS_SCRIPT_URL, {
                 method: 'POST',
                 mode: 'no-cors',
-                headers: {
-                    'Content-Type': 'text/plain'
-                },
-                body: JSON.stringify(payload)
-            })
-            .then(() => {
-                statusMsg.className = "p-4 rounded-xl text-center font-bold text-sm bg-green-100 text-green-900";
-                statusMsg.innerHTML = `<i class="fa-solid fa-circle-check"></i> تم إرسال كشف الأسرة لآل سيف بنجاح! البيانات الآن قيد التدقيق لدى المسؤول.`;
-                document.getElementById('registryForm').reset();
-                document.getElementById('membersContainer').innerHTML = "";
-                submitBtn.remove();
-                prevBtn.remove();
-            })
-            .catch(err => {
-                statusMsg.className = "p-4 rounded-xl text-center font-bold text-sm bg-red-100 text-red-900";
-                statusMsg.innerHTML = `<i class="fa-solid fa-circle-xmark"></i> خطأ أثناء الإرسال. المحاولة مرة أخرى لاحقاً.`;
-                submitBtn.disabled = false;
-                prevBtn.disabled = false;
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify({ action: 'approveFamily', familyId: fId })
+            }).then(() => {
+                alert("تم إرسال أمر الاعتماد بنجاح! جاري تحديث اللوحة.");
+                const f = rawDataCache.families.find(fam => fam.Family_ID === fId);
+                if(f) f.Status = 'Approved';
+                calculateStatsAndIndicators();
+                renderCurrentTab();
             });
         }
 
-        addMemberCard();
+        function deleteFamilyRow(fId) {
+            if(!confirm("⚠️ تحذير:\nهل أنت متأكد تماماً من حذف هذه الأسرة بالكامل من السجلات؟")) return;
+            
+            fetch(APPS_SCRIPT_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify({ action: 'deleteFamily', familyId: fId })
+            }).then(() => {
+                alert("تم حذف السجل العائلي بنجاح.");
+                rawDataCache.families = rawDataCache.families.filter(fam => fam.Family_ID !== fId);
+                rawDataCache.members = rawDataCache.members.filter(m => m.Family_ID !== fId);
+                calculateStatsAndIndicators();
+                renderCurrentTab();
+            });
+        }
     </script>
 </body>
 </html>
