@@ -204,6 +204,7 @@ body{font-family:'Cairo',sans-serif;background:#f5f0e8;color:var(--text);min-hei
 </div>
 
 <div id="app" class="hidden">
+
   <div class="sidebar">
     <div class="sidebar-logo">
       <div class="sb-emblem">☽</div>
@@ -230,6 +231,7 @@ body{font-family:'Cairo',sans-serif;background:#f5f0e8;color:var(--text);min-hei
   </div>
 
   <div class="main-content">
+
     <div id="sec-dashboard">
       <div class="topbar">
         <h1>لوحة التحكم</h1>
@@ -242,6 +244,7 @@ body{font-family:'Cairo',sans-serif;background:#f5f0e8;color:var(--text);min-hei
         <div class="stat-card"><span class="stat-icon">⏳</span><div><div class="stat-num" id="st-pend">—</div><div class="stat-lbl">قيد المراجعة</div></div></div>
         <div class="stat-card"><span class="stat-icon">⚠️</span><div><div class="stat-num" id="st-miss">—</div><div class="stat-lbl">صور ناقصة</div></div></div>
       </div>
+
       <div class="section" id="dash-pending-sec">
         <div class="section-hd">
           <span style="font-size:1.1rem">⏳</span>
@@ -287,9 +290,8 @@ body{font-family:'Cairo',sans-serif;background:#f5f0e8;color:var(--text);min-hei
         <div id="all-list"></div>
       </div>
     </div>
-  </div>
 
-  <div class="detail-panel" id="detail-panel">
+  </div><div class="detail-panel" id="detail-panel">
     <div class="dp-hd">
       <button class="dp-close" onclick="closeDetail()">✕ إغلاق</button>
       <div id="dp-photo-wrap"></div>
@@ -310,9 +312,8 @@ body{font-family:'Cairo',sans-serif;background:#f5f0e8;color:var(--text);min-hei
       <div id="dp-notes"></div>
     </div>
   </div>
-</div>
 
-<div class="modal-bd hidden" id="edit-modal">
+</div><div class="modal-bd hidden" id="edit-modal">
   <div class="modal">
     <div class="modal-hd"><h2 id="edit-modal-title">تعديل بيانات الأسرة</h2><button class="modal-close" onclick="closeEditModal()">✕</button></div>
     <div class="modal-body">
@@ -374,12 +375,15 @@ body{font-family:'Cairo',sans-serif;background:#f5f0e8;color:var(--text);min-hei
 </div>
 
 <script>
-const ADMIN_PASSWORD = 'Admin@AlSayf2026';
+// ============================================================
+const ADMIN_PASSWORD = 'Admin@AlSayf2026';   
 const SCRIPT_URL     = 'https://script.google.com/macros/s/AKfycbxth3O6KQBrql6YxwzfFIW1JINGwj6uLthOv-riXAA9BKigkqiw72EhIpTM0f0FTTqY/exec';
+// ============================================================
 
 let DB = [], currentDetailId = null, editMembers = [], editHeadPhoto = null;
 let currentSection = 'dashboard';
 
+// ===== LOGIN =====
 function doLogin() {
   if (document.getElementById('pw').value === ADMIN_PASSWORD) {
     sessionStorage.setItem('admin_auth', '1');
@@ -393,7 +397,10 @@ function doLogin() {
     document.getElementById('pw').value = '';
   }
 }
-function logout() { sessionStorage.removeItem('admin_auth'); location.reload(); }
+function logout() {
+  sessionStorage.removeItem('admin_auth');
+  location.reload();
+}
 window.addEventListener('load', () => {
   if (sessionStorage.getItem('admin_auth') === '1') {
     document.getElementById('login-sc').classList.add('hidden');
@@ -402,18 +409,33 @@ window.addEventListener('load', () => {
   }
 });
 
+// ===== DATA =====
 async function loadData() {
   spinner(true);
   try {
-    const r = await fetch(SCRIPT_URL + '?action=getFamilies', { cache: 'no-store', mode: 'cors' });
-    const d = await r.json();
+    const d = await jsonpGet(SCRIPT_URL + '?action=getFamilies');
     DB = d.families || [];
   } catch (e) {
     toast('⚠️ خطأ في جلب البيانات');
   }
-  updateStats(); renderCurrentSection(); spinner(false);
+  updateStats();
+  renderCurrentSection();
+  spinner(false);
 }
 
+// دالة جلب البيانات بدون حظر CORS
+function jsonpGet(url) {
+  return new Promise((resolve, reject) => {
+    const cbName = 'cb_' + Date.now();
+    window[cbName] = function(res) { delete window[cbName]; document.head.removeChild(s); resolve(res); };
+    const s = document.createElement('script');
+    s.src = url + '&callback=' + cbName;
+    s.onerror = () => { delete window[cbName]; reject(new Error('err')); };
+    document.head.appendChild(s);
+  });
+}
+
+// ===== STATS =====
 function updateStats() {
   const approved = DB.filter(f => f.approval === 'approved');
   const pending = DB.filter(f => f.approval === 'pending');
@@ -425,17 +447,20 @@ function updateStats() {
   document.getElementById('st-miss').textContent = missing;
   document.getElementById('pending-count-badge').textContent = pending.length + ' طلب';
   document.getElementById('pending-dot').classList.toggle('hidden', pending.length === 0);
+  // City filter
   const cities = [...new Set(DB.map(f => f.city).filter(Boolean))];
   const cf = document.getElementById('fam-city');
   if (cf) { const cur = cf.value; cf.innerHTML = '<option value="">كل المدن</option>' + cities.map(c => `<option${c === cur ? ' selected' : ''}>${c}</option>`).join(''); }
 }
 
+// ===== SECTIONS =====
 function showSection(name) {
   ['dashboard','pending','families','all'].forEach(s => {
     document.getElementById('sec-' + s).classList.toggle('hidden', s !== name);
     document.getElementById('nav-' + s).classList.toggle('active', s === name);
   });
-  currentSection = name; renderCurrentSection();
+  currentSection = name;
+  renderCurrentSection();
 }
 
 function renderCurrentSection() {
@@ -445,6 +470,7 @@ function renderCurrentSection() {
   else if (currentSection === 'all') renderAll();
 }
 
+// ===== DASHBOARD =====
 function renderDashboard() {
   const pending = DB.filter(f => f.approval === 'pending');
   const container = document.getElementById('dash-pending-list');
@@ -483,12 +509,14 @@ function pendingCardHTML(f) {
   </div>`;
 }
 
+// ===== FAMILIES LIST =====
 function renderFamilies() {
   const q = document.getElementById('fam-srch')?.value.trim().toLowerCase() || '';
   const cf = document.getElementById('fam-city')?.value || '';
   const sf = document.getElementById('fam-status')?.value || '';
   let list = DB.filter(f => f.approval === 'approved')
     .filter(f => (!q || f.headName?.toLowerCase().includes(q) || f.city?.toLowerCase().includes(q) || f.members?.some(m => m.name.toLowerCase().includes(q))) && (!cf || f.city === cf) && (!sf || f.status === sf));
+  // Sort by birthdate oldest first
   list.sort((a, b) => {
     if (!a.birthdate && !b.birthdate) return 0;
     if (!a.birthdate) return 1;
@@ -528,17 +556,19 @@ function famRowHTML(f, showStatus = false) {
   </div>`;
 }
 
+// ===== APPROVE =====
 async function approveFamily(id) {
   const f = DB.find(x => x.id === id);
   if (!f) return;
   f.approval = 'approved';
   spinner(true);
-  try { await jsonpSave(SCRIPT_URL, {...f, action:'saveFamily'}); }
+  try { await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({...f, action:'saveFamily'}) }); }
   catch (e) {}
   updateStats(); renderCurrentSection(); toast('✅ تم الاعتماد بنجاح');
   spinner(false);
 }
 
+// ===== DETAIL =====
 function showDetail(id) {
   currentDetailId = id;
   const f = DB.find(x => x.id === id);
@@ -561,6 +591,7 @@ function showDetail(id) {
 }
 function closeDetail() { document.getElementById('detail-panel').classList.remove('open'); }
 
+// ===== EDIT MODAL =====
 function openAddModal() {
   document.getElementById('edit-modal-title').textContent = 'إضافة أسرة جديدة';
   document.getElementById('e-fid').value = '';
@@ -677,7 +708,7 @@ async function saveEdit() {
     timestamp: existing?.timestamp || Date.now(),
   };
   spinner(true);
-  try { await jsonpSave(SCRIPT_URL, {...family, action:'saveFamily'}); }
+  try { await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({...family, action:'saveFamily'}) }); }
   catch (e) {}
   if (eid) { const idx = DB.findIndex(x => x.id === eid); if (idx >= 0) DB[idx] = family; }
   else DB.unshift(family);
@@ -687,49 +718,19 @@ async function saveEdit() {
 
 function closeEditModal() { document.getElementById('edit-modal').classList.add('hidden'); }
 
+// ===== DELETE =====
 let deleteTargetId = null;
 function confirmDelete(id) {
   const f = DB.find(x => x.id === id);
   if (!f) return;
   deleteTargetId = id;
-  document.getElementById('confirm-sub').textContent = `سيتم حذف بيانات أسرة "${f.headName}" بالكامل. لا يمكن التراجع.`;
+  document.getElementById('confirm-sub').textContent = `سيتم حذف بيانات أسرة "${f.headName}" بالكامل بما فيها أفراد الأسرة. لا يمكن التراجع.`;
   document.getElementById('confirm-action-btn').onclick = () => executeDelete(id);
   document.getElementById('confirm-modal').classList.remove('hidden');
 }
 
 async function executeDelete(id) {
   closeConfirm(); spinner(true);
-  try { await jsonpDelete(SCRIPT_URL, id); }
+  try { await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify({id: id, action: 'deleteFamily'}) }); }
   catch (e) {}
-  DB = DB.filter(x => x.id !== id);
-  closeDetail(); updateStats(); renderCurrentSection(); toast('🗑️ تم الحذف');
-  spinner(false);
-}
-
-function closeConfirm() { document.getElementById('confirm-modal').classList.add('hidden'); }
-
-function ini(n = '') { const p = n.trim().split(' '); return p.length >= 2 ? p[0][0] + p[p.length - 1][0] : (n[0] || '؟'); }
-function calcAge(d) { if (!d) return ''; return Math.floor((Date.now() - new Date(d)) / 31557600000); }
-function spinner(s) { document.getElementById('spin-ov').classList.toggle('hidden', !s); }
-function toast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3500); }
-document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeEditModal(); closeConfirm(); closeDetail(); } });
-
-function jsonpSave(url, data) {
-  return fetch(url, {
-    method: 'POST',
-    mode: 'no-cors',
-    headers: { 'Content-Type': 'text/plain' },
-    body: JSON.stringify({...data, action: 'saveFamily'})
-  });
-}
-function jsonpDelete(url, id) {
-  return fetch(url, {
-    method: 'POST',
-    mode: 'no-cors',
-    headers: { 'Content-Type': 'text/plain' },
-    body: JSON.stringify({id: id, action: 'deleteFamily'})
-  });
-}
-</script>
-</body>
-</html>
+  DB = DB.filter(x => x.id !== id
