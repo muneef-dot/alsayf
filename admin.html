@@ -1,36 +1,50 @@
-<!-- أضف هذا الرابط في قائمة nav-item داخل admin.html -->
-<div class="nav-item" onclick="showTree()" id="nav-tree">
-    <span class="nav-icon">🌳</span> شجرة العائلة
-</div>
-
-<!-- أضف هذا السكشن في الـ main-content داخل admin.html -->
-<div id="sec-tree" class="hidden">
-    <div class="topbar"><h1>شجرة العائلة التفاعلية</h1></div>
-    <div class="section">
-        <div class="section-hd"><h2>تسلسل الأجيال</h2></div>
-        <div id="tree-container" style="padding:2rem; background:white;"></div>
-    </div>
-</div>
-
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>لوحة تحكم المسؤول</title>
+<!-- الرابط السابق لا يزال صحيحاً، قمت فقط بتصحيح دالة العرض -->
 <script>
-// أضف هذه الدالة في سكربت admin.html
-function showTree() {
-    showSection('tree');
+// هذه الدالة ستحل مشكلة الشاشة البيضاء في admin.html
+function showSection(name) {
+  // إخفاء الكل
+  ['sec-dashboard', 'sec-pending', 'sec-families', 'sec-all', 'sec-tree'].forEach(s => {
+    document.getElementById(s)?.classList.add('hidden');
+  });
+  // إظهار المطلوب
+  document.getElementById('sec-' + name)?.classList.remove('hidden');
+  
+  // إذا كانت الشجرة، قم برسمها
+  if(name === 'tree') drawTree();
+}
+
+function drawTree() {
     const container = document.getElementById('tree-container');
+    if(!container) return;
     let html = '<div style="font-family:Cairo; direction:rtl;">';
-    
-    // ربط الأبناء بآبائهم
     DB.forEach(f => {
-        html += `<div style="margin-bottom:20px; border-right:4px solid var(--gold); padding-right:15px;">
+        html += `<div style="margin-bottom:15px; padding:10px; border-right:4px solid var(--gold); background:#fff;">
                  <h3 style="color:var(--dark)">${f.headName}</h3>`;
         const children = DB.filter(x => x.members && x.members.some(m => m.fatherName === f.headName));
         children.forEach(child => {
-            html += `<div style="margin-right:30px; padding:5px; border-bottom:1px solid #ddd;">${child.headName}</div>`;
+            html += `<div style="margin-right:20px; padding:5px; border-bottom:1px solid #eee;">${child.headName}</div>`;
         });
         html += `</div>`;
     });
-    
     html += '</div>';
     container.innerHTML = html;
 }
 </script>
+<!-- ... ضع بقية الكود (التصميم والأزرار) كما كان سابقاً ... -->
+</head>
+<body>
+    <!-- تأكد أن السكشن موجود في ملفك الأصلي -->
+    <div id="sec-tree" class="hidden">
+        <div class="topbar"><h1>شجرة العائلة التفاعلية</h1></div>
+        <div class="section">
+            <div class="section-hd"><h2>تسلسل الأجيال</h2></div>
+            <div id="tree-container" style="padding:2rem;"></div>
+        </div>
+    </div>
+</body>
+</html>
