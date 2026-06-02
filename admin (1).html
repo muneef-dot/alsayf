@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>لوحة تحكم المسؤول — أرشيف عائلة السيف</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --gold:#c8a55a;--gold-light:#e8d49a;--dark:#1a1208;
+  --sidebar:#1e1810;--bg:#f8f5ef;--white:#fff;
+  --text:#2c1f0a;--muted:#7a6a4a;--border:#e0d0a8;
+  --accent:#8b6914;--red:#c0392b;--green:#1e8449;--blue:#1a6fa8
+}
+body{font-family:'Segoe UI',Tahoma,Arial,sans-serif;background:var(--bg);direction:rtl}
+#login-screen{position:fixed;inset:0;background:var(--dark);display:flex;align-items:center;justify-content:center;z-index:999}
+.login-box{background:#fff;border-radius:14px;padding:40px 36px;width:340px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.login-box .logo{font-size:52px;margin-bottom:14px}
+.login-box h2{font-size:20px;font-weight:700;color:var(--dark);margin-bottom:6px}
+.login-box p{font-size:12px;color:var(--muted);margin-bottom:28px}
+.login-box input{width:100%;padding:11px 14px;border:1px solid var(--border);border-radius:8px;font-size:14px;margin-bottom:14px;text-align:right;font-family:inherit;outline:none;transition:border .2s}
+.login-box input:focus{border-color:var(--gold)}
+.login-btn{width:100%;padding:12px;background:var(--dark);color:var(--gold);border:none;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit}
+.login-btn:hover{background:#2e2010}
+.login-error{color:var(--red);font-size:12px;margin-bottom:10px;display:none}
+#app{display:none;height:100vh;overflow:hidden}
+.layout{display:flex;height:100vh}
+.sidebar{width:230px;background:var(--sidebar);display:flex;flex-direction:column;border-left:2px solid var(--gold);flex-shrink:0}
+.sidebar-logo{padding:22px 18px 18px;border-bottom:1px solid #3a2a10;text-align:center}
+.sidebar-logo .s-icon{font-size:36px;margin-bottom:8px}
+.sidebar-logo h2{font-size:14px;color:var(--gold);font-weight:700;line-height:1.3}
+.sidebar-logo span{font-size:11px;color:#8a7a50}
+.s-nav{flex:1;padding:10px 0;overflow-y:auto}
+.s-section{padding:10px 16px 4px;font-size:10px;color:#6a5a30;letter-spacing:1px;text-transform:uppercase}
+.s-item{display:flex;align-items:center;gap:10px;padding:11px 18px;cursor:pointer;font-size:13px;color:#c0a870;transition:all .2s;border-right:3px solid transparent}
+.s-item:hover{background:#2e2010;color:var(--gold-light)}
+.s-item.active{background:#2e2010;color:var(--gold);border-right-color:var(--gold)}
+.s-item .si{font-size:16px;width:22px;text-align:center}
+.sidebar-foot{padding:14px 18px;border-top:1px solid #3a2a10;font-size:11px;color:#6a5a30}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{background:#fff;border-bottom:1px solid var(--border);padding:13px 26px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.topbar-title{font-size:18px;font-weight:700;color:var(--text)}
+.topbar-actions{display:flex;gap:8px;align-items:center}
+.content{flex:1;overflow-y:auto;padding:26px}
+.btn{padding:7px 15px;border-radius:7px;font-size:13px;cursor:pointer;border:1px solid;font-weight:600;transition:all .15s;display:inline-flex;align-items:center;gap:6px;font-family:inherit}
+.btn-primary{background:var(--gold);border-color:var(--accent);color:var(--dark)}
+.btn-primary:hover{background:var(--gold-light)}
+.btn-outline{background:#fff;border-color:var(--border);color:var(--text)}
+.btn-outline:hover{background:#faf7f0;border-color:var(--gold)}
+.btn-sm{padding:5px 11px;font-size:12px}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px}
+.stat-card{background:#fff;border:1px solid var(--border);border-radius:10px;padding:18px;text-align:center}
+.stat-card .s-num{font-size:30px;font-weight:700;color:var(--accent)}
+.stat-card .s-lbl{font-size:12px;color:var(--muted);margin-top:4px}
+.stat-card .s-ico{font-size:24px;margin-bottom:6px}
+.card{background:#fff;border:1px solid var(--border);border-radius:10px;margin-bottom:20px;overflow:hidden}
+.card-head{padding:14px 20px;background:#faf7f0;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.card-head h3{font-size:15px;font-weight:700;color:var(--text)}
+.card-body{padding:20px}
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{background:#faf7f0;color:var(--muted);font-weight:700;padding:10px 14px;text-align:right;border-bottom:1px solid var(--border);font-size:12px}
+.tbl td{padding:10px 14px;border-bottom:1px solid #f0ead8;color:var(--text)}
+.tbl tr:last-child td{border-bottom:none}
+.tbl tr:hover td{background:#fdfaf3}
+.badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700}
+.b-green{background:#eafaf1;color:#1e8449}
+.b-orange{background:#fef9e7;color:#b7770d}
+.b-red{background:#fdf0f0;color:var(--red)}
+.b-blue{background:#eaf4fb;color:var(--blue)}
+.b-gold{background:#fef9e7;color:var(--accent)}
+.b-purple{background:#f3eeff;color:#6b3fa0}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:200;padding:20px}
+.modal-box{background:#fff;border-radius:12px;width:100%;max-width:640px;max-height:88vh;overflow-y:auto;box-shadow:0 10px 40px rgba(0,0,0,.3)}
+.modal-head{padding:16px 22px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:#fff;z-index:1}
+.modal-head h3{font-size:16px;font-weight:700}
+.modal-body{padding:22px}
+.modal-foot{padding:14px 22px;border-top:1px solid var(--border);display:flex;gap:8px}
+.fg{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.fg-full{grid-column:1/-1}
+.fg-title{grid-column:1/-1;font-size:13px;font-weight:700;color:var(--accent);padding-bottom:8px;border-bottom:1px solid var(--border);margin-top:6px}
+.fl{display:flex;flex-direction:column;gap:6px}
+.fl label{font-size:13px;font-weight:600;color:var(--text)}
+.fl input,.fl select,.fl textarea{padding:9px 12px;border:1px solid var(--border);border-radius:7px;font-size:13px;font-family:inherit;color:var(--text);background:#fff;transition:border .2s;outline:none}
+.fl input:focus,.fl select:focus{border-color:var(--gold)}
+.bar-row{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.bar-label{font-size:12px;width:70px;text-align:right;color:var(--muted)}
+.bar-track{flex:1;height:14px;background:#f0ead8;border-radius:20px;overflow:hidden}
+.bar-fill{height:100%;background:var(--gold);border-radius:20px}
+.bar-num{font-size:12px;font-weight:700;color:var(--text);min-width:24px}
+.notif{position:fixed;top:18px;left:50%;transform:translateX(-50%);background:var(--dark);color:var(--gold);padding:11px 22px;border-radius:8px;font-size:13px;z-index:999;border:1px solid var(--gold);opacity:0;transition:opacity .3s;pointer-events:none}
+.notif.show{opacity:1}
+.hidden{display:none!important}
+.loading{text-align:center;padding:60px;color:var(--muted)}
+.loading .l-icon{font-size:40px;margin-bottom:16px}
+.edit-badge{background:#fff3cd;color:#856404;border:1px solid #ffc107;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700}
+</style>
+</head>
+<body>
+
+<div class="notif" id="notif"></div>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="logo">&#127963;</div>
+    <h2>أرشيف عائلة السيف</h2>
+    <p>لوحة تحكم المسؤول</p>
+    <input type="text" id="l-user" placeholder="اسم المستخدم" value="admin">
+    <input type="password" id="l-pass" placeholder="كلمة المرور">
+    <div class="login-error" id="l-err">كلمة المرور غير صحيحة</div>
+    <button class="login-btn" onclick="doLogin()">دخول</button>
+    <p style="font-size:11px;color:var(--muted);margin-top:14px">كلمة المرور: Admin@AlSayf2026</p>
+  </div>
+</div>
+
+<!-- ADD MODAL -->
+<div class="modal-bg hidden" id="add-modal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3>إضافة فرد جديد</h3>
+      <button class="btn btn-outline btn-sm" onclick="closeModal()">إغلاق</button>
+    </div>
+    <div class="modal-body">
+      <div class="fg">
+        <div class="fg-title">البيانات الشخصية</div>
+        <div class="fl"><label>الاسم الكامل</label><input id="f-name" placeholder="الاسم كاملاً"></div>
+        <div class="fl"><label>اسم الأب</label><input id="f-father" placeholder="اسم الأب"></div>
+        <div class="fl"><label>تاريخ الميلاد</label><input type="date" id="f-dob"></div>
+        <div class="fl"><label>الجنس</label><select id="f-gender"><option value="">اختر</option><option>ذكر</option><option>أنثى</option></select></div>
+        <div class="fl"><label>الحالة الاجتماعية</label><select id="f-status"><option value="">اختر</option><option>أعزب</option><option>متزوج</option><option>مطلق</option><option>أرمل</option></select></div>
+        <div class="fl"><label>الوظيفة</label><input id="f-job" placeholder="الوظيفة أو المهنة"></div>
+        <div class="fg-title">الموقع والتواصل</div>
+        <div class="fl"><label>المحافظة</label><input id="f-city" placeholder="المحافظة"></div>
+        <div class="fl"><label>رقم الجوال</label><input id="f-phone" placeholder="7xxxxxxxx" dir="ltr"></div>
+        <div class="fg-title">السجل</div>
+        <div class="fl"><label>الدور / صلة القرابة</label><select id="f-role"><option>رب الأسرة</option><option>ابن</option><option>ابنة</option><option>زوجة</option><option>فرد</option></select></div>
+        <div class="fl"><label>اسم الأب في الشجرة</label><input id="f-tree-father" placeholder="لربط الشجرة"></div>
+        <div class="fl fg-full"><label>ملاحظات</label><textarea id="f-notes" rows="3" placeholder="أي معلومات إضافية..."></textarea></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-primary" onclick="saveMember()">حفظ في Sheets</button>
+      <button class="btn btn-outline" onclick="closeModal()">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- VIEW MODAL -->
+<div class="modal-bg hidden" id="view-modal">
+  <div class="modal-box" style="max-width:500px">
+    <div class="modal-head">
+      <h3 id="view-name">تفاصيل الفرد</h3>
+      <button class="btn btn-outline btn-sm" onclick="closeViewModal()">إغلاق</button>
+    </div>
+    <div class="modal-body" id="view-body"></div>
+    <div class="modal-foot" id="view-foot"></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+<div class="layout">
+
+  <div class="sidebar">
+    <div class="sidebar-logo">
+      <div class="s-icon">&#127963;</div>
+      <h2>أرشيف عائلة السيف</h2>
+      <span>AlSayf Family Archive</span>
+    </div>
+    <nav class="s-nav">
+      <div class="s-section">الرئيسية</div>
+      <div class="s-item active" data-page="dashboard"><span class="si">📊</span> لوحة التحكم</div>
+      <div class="s-section">إدارة الأسرة</div>
+      <div class="s-item" data-page="members"><span class="si">👥</span> أفراد الأسرة</div>
+      <div class="s-item" data-page="pending"><span class="si">⏳</span> طلبات المراجعة</div>
+      <div class="s-item" data-page="tree"><span class="si">🌳</span> شجرة العائلة</div>
+      <div class="s-section">التقارير</div>
+      <div class="s-item" data-page="report"><span class="si">📄</span> التقارير والطباعة</div>
+      <div class="s-section">النظام</div>
+      <div class="s-item" data-page="settings"><span class="si">🔒</span> الإعدادات</div>
+    </nav>
+    <div class="sidebar-foot">
+      <div>المسؤول: منيف السيف</div>
+      <div style="margin-top:4px;font-size:10px;opacity:.6">v4.0</div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-title" id="page-title">لوحة التحكم</div>
+      <div class="topbar-actions">
+        <button class="btn btn-outline btn-sm" onclick="loadData()">🔄 تحديث</button>
+        <button class="btn btn-primary btn-sm" onclick="openModal()">➕ إضافة فرد</button>
+      </div>
+    </div>
+    <div class="content" id="content-area">
+      <div class="loading"><div class="l-icon">⏳</div><p>جارٍ تحميل البيانات...</p></div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<script>
+var PASS = 'Admin@AlSayf2026';
+var URL  = 'https://script.google.com/macros/s/AKfycbzH8j_KdS2gFMGxC_ehpcT452lb0Ze8VD7Brqe7zjXGgkSy7-E7ORF2H29ZGUPmMTpX/exec';
+var DB   = [];
+var loaded = false;
+
+// LOGIN
+function doLogin() {
+  var pass = document.getElementById('l-pass').value.trim();
+  var err  = document.getElementById('l-err');
+  if (pass === PASS) {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    nav('dashboard');
+    loadData();
+  } else {
+    err.style.display = 'block';
+    document.getElementById('l-pass').value = '';
+  }
+}
+document.getElementById('l-pass').addEventListener('keyup', function(e){ if(e.key==='Enter') doLogin(); });
+
+// LOAD DATA
+function loadData() {
+  showNotif('جارٍ جلب البيانات...');
+  var s = document.createElement('script');
+  s.src = URL + '?action=getFamilies&callback=onData&t=' + Date.now();
+  s.onerror = function(){ showNotif('تعذّر الاتصال'); };
+  document.head.appendChild(s);
+  setTimeout(function(){ try{ document.head.removeChild(s); }catch(e){} }, 8000);
+}
+
+function onData(data) {
+  if (data && data.families) {
+    DB = data.families;
+    loaded = true;
+    showNotif('تم التحديث — ' + DB.length + ' فرد');
+    var active = document.querySelector('.s-item.active');
+    if (active) nav(active.dataset.page);
+  }
+}
+
+// NAV
+var titles = {
+  dashboard: 'لوحة التحكم', members: 'أفراد الأسرة',
+  pending: 'طلبات المراجعة', tree: 'شجرة العائلة',
+  report: 'التقارير', settings: 'الإعدادات'
+};
+
+document.querySelectorAll('.s-item').forEach(function(item){
+  item.addEventListener('click', function(){
+    document.querySelectorAll('.s-item').forEach(function(i){ i.classList.remove('active'); });
+    item.classList.add('active');
+    nav(item.dataset.page);
+  });
+});
+
+function nav(id) {
+  document.getElementById('page-title').textContent = titles[id] || id;
+  var area = document.getElementById('content-area');
+  if (!loaded && id !== 'settings') {
+    area.innerHTML = '<div class="loading"><div class="l-icon">⏳</div><p>جارٍ تحميل البيانات من Google Sheets...</p></div>';
+    return;
+  }
+  var pages = { dashboard:pgDashboard, members:pgMembers, pending:pgPending, tree:pgTree, report:pgReport, settings:pgSettings };
+  if (pages[id]) area.innerHTML = pages[id]();
+}
+
+// NOTIF
+function showNotif(msg) {
+  var n = document.getElementById('notif');
+  n.textContent = msg; n.classList.add('show');
+  setTimeout(function(){ n.classList.remove('show'); }, 3000);
+}
+
+// MODAL
+function openModal() { document.getElementById('add-modal').classList.remove('hidden'); }
+function closeModal() { document.getElementById('add-modal').classList.add('hidden'); }
+function closeViewModal() { document.getElementById('view-modal').classList.add('hidden'); }
+
+function saveMember() {
+  var name = document.getElementById('f-name').value.trim();
+  var father = document.getElementById('f-father').value.trim();
+  if (!name) { showNotif('يرجى إدخال الاسم'); return; }
+  var payload = {
+    action: 'addMember', name: name, father: father,
+    dob: document.getElementById('f-dob').value,
+    gender: document.getElementById('f-gender').value,
+    status: document.getElementById('f-status').value,
+    job: document.getElementById('f-job').value,
+    city: document.getElementById('f-city').value,
+    phone: document.getElementById('f-phone').value,
+    role: document.getElementById('f-role').value,
+    notes: document.getElementById('f-notes').value
+  };
+  fetch(URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain'}, body:JSON.stringify(payload) })
+  .finally(function(){
+    showNotif('تم حفظ "' + name + '"');
+    closeModal();
+    setTimeout(loadData, 2000);
+  });
+}
+
+function viewMember(i) {
+  var m = DB[i]; if(!m) return;
+  var isEdit = m.isEdit;
+  document.getElementById('view-name').textContent = m.name;
+  document.getElementById('view-body').innerHTML =
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;font-size:13px">' +
+    (isEdit ? '<div style="grid-column:1/-1"><span class="edit-badge">✏️ طلب معدَّل — يحتاج مراجعة</span></div>' : '') +
+    '<div><b>اسم الأب:</b> '+(m.father||'—')+'</div>' +
+    '<div><b>الدور:</b> '+(m.role||'—')+'</div>' +
+    '<div><b>المحافظة:</b> '+(m.city||'—')+'</div>' +
+    '<div><b>الوظيفة:</b> '+(m.job||'—')+'</div>' +
+    '<div><b>الجوال:</b> <span dir="ltr">'+(m.phone||'—')+'</span></div>' +
+    '<div><b>الحالة:</b> '+(m.marital||'—')+'</div>' +
+    '<div><b>تاريخ الميلاد:</b> '+(m.dob||'—')+'</div>' +
+    '<div><b>الاعتماد:</b> '+(m.approved ? '✅ معتمد' : '⏳ قيد المراجعة')+'</div>' +
+    (m.notes ? '<div style="grid-column:1/-1"><b>ملاحظات:</b> '+m.notes+'</div>' : '') +
+    '</div>';
+  document.getElementById('view-foot').innerHTML =
+    (m.approved ? '' : '<button class="btn btn-primary btn-sm" onclick="approveMember('+i+')">✅ اعتماد</button>') +
+    '<button class="btn btn-outline btn-sm" onclick="closeViewModal()">إغلاق</button>';
+  document.getElementById('view-modal').classList.remove('hidden');
+}
+
+function approveMember(i) {
+  if (DB[i]) { DB[i].approved = true; DB[i].isEdit = false; showNotif('تم اعتماد: '+DB[i].name); closeViewModal(); nav('members'); }
+}
+
+// CITY STATS
+function cityStats() {
+  var c = {};
+  DB.forEach(function(m){ if(m.city) c[m.city]=(c[m.city]||0)+1; });
+  var s = Object.entries(c).sort(function(a,b){ return b[1]-a[1]; }).slice(0,5);
+  var max = s[0] ? s[0][1] : 1;
+  return s.map(function(x){ return {city:x[0], count:x[1], pct:Math.round(x[1]/max*100)}; });
+}
+
+// ===== PAGES =====
+
+function pgDashboard() {
+  var total = DB.length;
+  var approved = DB.filter(function(m){ return m.approved; }).length;
+  var pending  = DB.filter(function(m){ return !m.approved; }).length;
+  var edited   = DB.filter(function(m){ return m.isEdit; }).length;
+
+  var stats = '<div class="stats-grid">' +
+    '<div class="stat-card"><div class="s-ico">👨‍👩‍👧‍👦</div><div class="s-num">'+total+'</div><div class="s-lbl">إجمالي الأفراد</div></div>' +
+    '<div class="stat-card"><div class="s-ico">✅</div><div class="s-num">'+approved+'</div><div class="s-lbl">معتمدون</div></div>' +
+    '<div class="stat-card"><div class="s-ico">⏳</div><div class="s-num">'+pending+'</div><div class="s-lbl">قيد المراجعة</div></div>' +
+    '<div class="stat-card"><div class="s-ico">✏️</div><div class="s-num">'+edited+'</div><div class="s-lbl">طلبات تعديل</div></div>' +
+    '</div>';
+
+  var rows = DB.slice(-5).reverse().map(function(m,i){
+    var idx = DB.length - 1 - i;
+    return '<tr><td><b>'+m.name+'</b></td><td>'+(m.father||'—')+'</td>' +
+      '<td>'+(m.city||'—')+'</td>' +
+      '<td><span class="badge '+(m.approved?'b-green':(m.isEdit?'b-purple':'b-orange'))+'">'+(m.approved?'✓ معتمد':(m.isEdit?'✏️ معدَّل':'⏳ جديد'))+'</span></td>' +
+      '<td><button class="btn btn-outline btn-sm" onclick="viewMember('+idx+')">عرض</button></td></tr>';
+  }).join('');
+
+  var table = '<div class="card"><div class="card-head"><h3>آخر الإضافات</h3><span class="badge b-green">● متصل بـ Sheets</span></div>' +
+    '<table class="tbl"><tr><th>الاسم</th><th>اسم الأب</th><th>المحافظة</th><th>الحالة</th><th></th></tr>' +
+    rows + '</table></div>';
+
+  var bars = cityStats().map(function(c){
+    return '<div class="bar-row"><span class="bar-label">'+c.city+'</span><div class="bar-track"><div class="bar-fill" style="width:'+c.pct+'%"></div></div><span class="bar-num">'+c.count+'</span></div>';
+  }).join('') || '<p style="color:var(--muted);font-size:13px">لا توجد بيانات</p>';
+
+  var quick = '<div class="card"><div class="card-head"><h3>⚡ روابط سريعة</h3></div><div class="card-body" style="display:flex;flex-direction:column;gap:8px">' +
+    '<button class="btn btn-outline" style="justify-content:flex-start" onclick="window.open(\'https://drive.google.com/drive/folders/1JUINZqf0AWNjcotEyy456QOTQV2HMnXG\',\'_blank\')">📁 فتح Google Drive</button>' +
+    '<button class="btn btn-outline" style="justify-content:flex-start" onclick="document.querySelector(\'[data-page=pending]\').click()">⏳ مراجعة الطلبات ('+pending+')</button>' +
+    '<button class="btn btn-primary" style="justify-content:flex-start" onclick="document.querySelector(\'[data-page=report]\').click()">📄 تقرير شامل</button>' +
+    '</div></div>';
+
+  return stats + table +
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">' +
+    '<div class="card"><div class="card-head"><h3>🗺️ توزيع المحافظات</h3></div><div class="card-body">'+bars+'</div></div>' +
+    quick + '</div>';
+}
+
+function pgMembers() {
+  var html = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px">' +
+    '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
+    '<input id="srch" placeholder="🔍 البحث..." style="padding:8px 12px;border:1px solid var(--border);border-radius:7px;font-size:13px;width:180px;font-family:inherit;outline:none" oninput="filterMembers()">' +
+    '<select id="city-f" style="padding:8px 12px;border:1px solid var(--border);border-radius:7px;font-size:13px;font-family:inherit;outline:none" onchange="filterMembers()">' +
+    '<option value="">كل المحافظات</option>' +
+    Array.from(new Set(DB.map(function(m){ return m.city; }).filter(Boolean))).map(function(c){ return '<option>'+c+'</option>'; }).join('') +
+    '</select></div>' +
+    '<div style="display:flex;gap:8px">' +
+    '<button class="btn btn-outline btn-sm" onclick="loadData()">🔄</button>' +
+    '<button class="btn btn-primary" onclick="openModal()">➕ إضافة</button></div></div>' +
+    '<div class="card"><div class="card-head"><h3>أفراد الأسرة (<span id="mc">'+DB.length+'</span>)</h3>' +
+    '<button class="btn btn-outline btn-sm" onclick="exportCSV()">📥 CSV</button></div>' +
+    '<div id="mt">'+memberTable(DB)+'</div></div>';
+  return html;
+}
+
+function memberTable(list) {
+  if (!list.length) return '<div style="padding:30px;text-align:center;color:var(--muted)">لا توجد نتائج</div>';
+  var rows = list.map(function(m,i){
+    var idx = DB.indexOf(m);
+    var badge = m.approved ? 'b-green' : (m.isEdit ? 'b-purple' : 'b-orange');
+    var label = m.approved ? '✓' : (m.isEdit ? '✏️' : '⏳');
+    return '<tr><td>'+(i+1)+'</td><td><b>'+m.name+'</b></td><td>'+(m.father||'—')+'</td>' +
+      '<td>'+(m.job||'—')+'</td><td>'+(m.city||'—')+'</td>' +
+      '<td><span class="badge '+badge+'">'+label+'</span></td>' +
+      '<td><button class="btn btn-outline btn-sm" onclick="viewMember('+idx+')">👁️ عرض</button></td></tr>';
+  }).join('');
+  return '<table class="tbl"><tr><th>#</th><th>الاسم</th><th>اسم الأب</th><th>الوظيفة</th><th>المحافظة</th><th>الحالة</th><th></th></tr>' + rows + '</table>';
+}
+
+function filterMembers() {
+  var q  = (document.getElementById('srch')||{}).value||'';
+  var ct = (document.getElementById('city-f')||{}).value||'';
+  q = q.toLowerCase();
+  var f = DB.filter(function(m){
+    return (!q || m.name.toLowerCase().includes(q) || (m.father||'').toLowerCase().includes(q)) &&
+           (!ct || m.city === ct);
+  });
+  var mt = document.getElementById('mt');
+  var mc = document.getElementById('mc');
+  if (mt) mt.innerHTML = memberTable(f);
+  if (mc) mc.textContent = f.length;
+}
+
+function exportCSV() {
+  var h = 'الاسم,اسم الأب,الوظيفة,المحافظة,الجوال,الحالة\n';
+  var r = DB.map(function(m){ return [m.name,m.father,m.job,m.city,m.phone,m.approved?'معتمد':'قيد المراجعة'].join(','); }).join('\n');
+  var a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,\uFEFF' + encodeURIComponent(h+r);
+  a.download = 'alsayf.csv'; a.click();
+  showNotif('تم التصدير');
+}
+
+function pgPending() {
+  var list = DB.filter(function(m){ return !m.approved; });
+  if (!list.length) return '<div class="card"><div class="card-body" style="text-align:center;padding:40px;color:var(--muted)"><div style="font-size:40px;margin-bottom:12px">✅</div><p>لا توجد طلبات معلقة</p></div></div>';
+
+  var rows = list.map(function(m){
+    var idx = DB.indexOf(m);
+    var badge = m.isEdit ? 'b-purple' : 'b-orange';
+    var label = m.isEdit ? '✏️ معدَّل' : '⏳ جديد';
+    return '<tr>' +
+      '<td><b>'+m.name+'</b>'+(m.isEdit?'<br><small style="color:#6b3fa0">طلب تعديل</small>':'')+'</td>' +
+      '<td>'+(m.father||'—')+'</td><td>'+(m.city||'—')+'</td><td>'+(m.job||'—')+'</td>' +
+      '<td><span class="badge '+badge+'">'+label+'</span></td>' +
+      '<td style="display:flex;gap:4px">' +
+      '<button class="btn btn-primary btn-sm" onclick="approveMember('+idx+')">✅ اعتماد</button>' +
+      '<button class="btn btn-outline btn-sm" onclick="viewMember('+idx+')">👁️</button>' +
+      '</td></tr>';
+  }).join('');
+
+  return '<div class="card"><div class="card-head"><h3>طلبات المراجعة ('+list.length+')</h3></div>' +
+    '<table class="tbl"><tr><th>الاسم</th><th>اسم الأب</th><th>المحافظة</th><th>الوظيفة</th><th>الحالة</th><th>إجراء</th></tr>' +
+    rows + '</table></div>';
+}
+
+function pgTree() {
+  if (!DB.length) return '<div class="card"><div class="card-body" style="text-align:center;padding:40px;color:var(--muted)">لا توجد بيانات</div></div>';
+  var rows = DB.map(function(m,i){
+    return '<tr><td><b>'+m.name+'</b></td><td>'+(m.father||'الجذر')+'</td>' +
+      '<td>'+(m.role||'—')+'</td><td>'+(m.city||'—')+'</td><td>'+(m.job||'—')+'</td>' +
+      '<td><button class="btn btn-outline btn-sm" onclick="viewMember('+i+')">👁️</button></td></tr>';
+  }).join('');
+  return '<div class="card"><div class="card-head"><h3>🌳 شجرة العائلة ('+DB.length+' فرد)</h3>' +
+    '<button class="btn btn-outline btn-sm" onclick="window.print()">🖨️ طباعة</button></div>' +
+    '<table class="tbl"><tr><th>الاسم</th><th>اسم الأب</th><th>الدور</th><th>المحافظة</th><th>الوظيفة</th><th></th></tr>' +
+    rows + '</table></div>';
+}
+
+function pgReport() {
+  var rows = DB.map(function(m,i){
+    return '<tr><td>'+(i+1)+'</td><td><b>'+m.name+'</b></td><td>'+(m.father||'—')+'</td>' +
+      '<td>'+(m.role||'—')+'</td><td>'+(m.city||'—')+'</td><td>'+(m.job||'—')+'</td>' +
+      '<td dir="ltr">'+(m.phone||'—')+'</td>' +
+      '<td><span class="badge '+(m.approved?'b-green':'b-orange')+'">'+(m.approved?'✓ معتمد':'⏳')+'</span></td></tr>';
+  }).join('');
+  return '<div style="display:flex;gap:8px;margin-bottom:18px">' +
+    '<button class="btn btn-primary" onclick="window.print()">🖨️ طباعة</button>' +
+    '<button class="btn btn-outline" onclick="exportCSV()">📊 CSV</button></div>' +
+    '<div style="background:var(--dark);color:var(--gold);padding:20px;text-align:center;border-radius:8px;margin-bottom:16px">' +
+    '<h2 style="font-size:18px;margin-bottom:6px">🏛️ سجل أسرة السيف</h2>' +
+    '<p style="font-size:12px;opacity:.7">'+DB.length+' فرد موثق</p></div>' +
+    '<div class="card"><table class="tbl"><tr><th>#</th><th>الاسم</th><th>اسم الأب</th><th>الدور</th><th>المحافظة</th><th>الوظيفة</th><th>الجوال</th><th>الحالة</th></tr>' +
+    rows + '</table></div>';
+}
+
+function pgSettings() {
+  return '<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">' +
+    '<div class="card"><div class="card-head"><h3>🔒 كلمة المرور</h3></div><div class="card-body">' +
+    '<div style="display:flex;flex-direction:column;gap:12px">' +
+    '<div class="fl"><label>الحالية</label><input type="password" placeholder="••••••••"></div>' +
+    '<div class="fl"><label>الجديدة</label><input type="password" placeholder="8 أحرف على الأقل"></div>' +
+    '<button class="btn btn-primary" onclick="showNotif(\'تم التغيير\')">حفظ</button>' +
+    '</div></div></div>' +
+    '<div class="card"><div class="card-head"><h3>📊 إحصائيات السجل</h3></div><div class="card-body">' +
+    '<div style="font-size:13px;display:flex;flex-direction:column;gap:10px">' +
+    '<div>إجمالي الأفراد: <b>'+DB.length+'</b></div>' +
+    '<div>معتمدون: <b>'+DB.filter(function(m){ return m.approved; }).length+'</b></div>' +
+    '<div>قيد المراجعة: <b>'+DB.filter(function(m){ return !m.approved; }).length+'</b></div>' +
+    '<div>طلبات تعديل: <b>'+DB.filter(function(m){ return m.isEdit; }).length+'</b></div>' +
+    '</div></div></div>' +
+    '<div class="card"><div class="card-head"><h3>🔗 روابط النظام</h3></div><div class="card-body">' +
+    '<div style="display:flex;flex-direction:column;gap:8px">' +
+    '<button class="btn btn-outline" onclick="window.open(\'https://drive.google.com/drive/folders/1JUINZqf0AWNjcotEyy456QOTQV2HMnXG\',\'_blank\')">📁 فتح Drive</button>' +
+    '<button class="btn btn-outline" onclick="loadData()">🔄 اختبار الاتصال بـ Sheets</button>' +
+    '</div></div></div>' +
+    '</div>';
+}
+</script>
+</body>
+</html>
