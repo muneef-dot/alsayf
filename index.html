@@ -326,7 +326,7 @@ body{font-family:'Segoe UI',Tahoma,Arial,sans-serif;background:var(--bg);color:v
 </footer>
 
 <script>
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzdKT3x1nSjBCFC5Feg1TbzB2WCJGRE2x9V1NXexUzZE7520r_cK7002sGx2OYPKCUY/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzo8nagTFKqHCn4rc9LhZbBXMsJbRhKubX8R1n--MYGuQVmKPZzcgZv1E8SaR3z-GJb/exec';
 
 let memberList = [];
 
@@ -438,10 +438,12 @@ async function submitForm() {
   try {
     await fetch(SCRIPT_URL, {
       method: 'POST',
+      mode: 'no-cors',
+      headers: {'Content-Type': 'text/plain'},
       body: JSON.stringify(payload)
     });
   } catch(e) {
-    // silent — show success regardless for demo
+    // silent
   }
 
   // SHOW SUCCESS

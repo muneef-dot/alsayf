@@ -383,7 +383,7 @@ body{font-family:'Segoe UI',Tahoma,Arial,sans-serif;background:var(--bg);directi
 <script>
 // ===== CONFIG =====
 const ADMIN_PASSWORD = 'Admin@AlSayf2026';
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzdKT3x1nSjBCFC5Feg1TbzB2WCJGRE2x9V1NXexUzZE7520r_cK7002sGx2OYPKCUY/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzo8nagTFKqHCn4rc9LhZbBXMsJbRhKubX8R1n--MYGuQVmKPZzcgZv1E8SaR3z-GJb/exec';
 
 // ===== DEMO DATA (سيُستبدل بالبيانات الحقيقية من Sheets) =====
 let DB = [
@@ -410,6 +410,16 @@ function doLogin() {
   }
 }
 document.getElementById('l-pass').addEventListener('keyup', e => { if(e.key==='Enter') doLogin(); });
+
+// ===== JSONP callback من Apps Script =====
+function handleFamilies(data) {
+  if (data && data.families) {
+    DB = data.families;
+    notif('✅ تم التحديث من Google Sheets — ' + DB.length + ' فرد');
+    const id = document.querySelector('.s-item.active')?.dataset?.page;
+    if (id) showPage(id);
+  }
+}
 
 // ===== NAVIGATION =====
 const pageTitles = {
@@ -473,6 +483,8 @@ function saveMember() {
   // إرسال للـ Apps Script
   fetch(SCRIPT_URL, {
     method: 'POST',
+    mode: 'no-cors',
+    headers: {'Content-Type': 'text/plain'},
     body: JSON.stringify({
       action: 'addMember',
       ...newMember,
@@ -481,7 +493,7 @@ function saveMember() {
       email: document.getElementById('f-email').value,
       notes: document.getElementById('f-notes').value
     })
-  }).catch(() => {}); // silent fail for demo
+  }).catch(() => {});
   notif(`✅ تم حفظ "${name}" في السجل وإرساله لـ Google Sheets`);
   closeModal();
   showPage('members');
@@ -490,12 +502,14 @@ function saveMember() {
 // ===== LOAD DATA FROM SHEETS =====
 function loadData() {
   notif('🔄 جارٍ التحديث من Google Sheets...');
-  fetch(SCRIPT_URL + '?action=getFamilies')
-    .then(r => r.json())
-    .then(d => {
-      if (d.families) { DB = d.families; notif('✅ تم التحديث بنجاح'); }
-    })
-    .catch(() => notif('⚠️ تعذّر الاتصال — يعمل بالبيانات المحلية'));
+  const url = SCRIPT_URL + '?action=getFamilies&callback=handleFamilies';
+  const script = document.createElement('script');
+  script.src = url;
+  document.head.appendChild(script);
+  setTimeout(() => {
+    document.head.removeChild(script);
+    notif('⚠️ تعذّر الاتصال — يعمل بالبيانات المحلية');
+  }, 5000);
 }
 
 // ===== RENDER DASHBOARD =====
