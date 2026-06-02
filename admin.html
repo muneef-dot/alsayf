@@ -281,7 +281,7 @@ body{font-family:'Segoe UI',Tahoma,Arial,sans-serif;background:var(--bg);directi
 <div class="notif" id="notif"></div>
 
 <!-- LOGIN -->
-<div id="login-screen">
+<div id="login-screen" style="display:flex">
   <div class="login-box">
     <div class="logo">🏛️</div>
     <h2>أرشيف عائلة السيف</h2>
@@ -334,7 +334,7 @@ body{font-family:'Segoe UI',Tahoma,Arial,sans-serif;background:var(--bg);directi
 </div>
 
 <!-- APP -->
-<div id="app">
+<div id="app" style="display:none">
 <div class="layout">
 
   <!-- SIDEBAR -->
@@ -401,14 +401,17 @@ let isLoaded = false;
 
 // ===== AUTH =====
 function doLogin() {
-  const pass = document.getElementById('l-pass').value;
+  const pass = document.getElementById('l-pass').value.trim();
   if (pass === ADMIN_PASSWORD) {
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('app').style.display = 'block';
     showPage('dashboard');
     loadDataFromSheets();
   } else {
-    document.getElementById('l-err').style.display = 'block';
+    const err = document.getElementById('l-err');
+    if(err) err.style.display = 'block';
+    document.getElementById('l-pass').value = '';
+    document.getElementById('l-pass').focus();
   }
 }
 document.getElementById('l-pass').addEventListener('keyup', e => { if(e.key==='Enter') doLogin(); });
