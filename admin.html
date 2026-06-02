@@ -380,23 +380,24 @@ body{font-family:'Segoe UI',Tahoma,Arial,sans-serif;background:var(--bg);directi
 </div>
 </div>
 
+
+<!-- VIEW MEMBER MODAL -->
+<div class="modal-bg hidden" id="view-modal">
+  <div class="modal-box" style="max-width:500px">
+    <div class="modal-head">
+      <h3 id="view-name">تفاصيل الفرد</h3>
+      <button class="btn btn-outline btn-sm" onclick="closeViewModal()">✕</button>
+    </div>
+    <div class="modal-body" id="view-body"></div>
+  </div>
+</div>
+
 <script>
 // ===== CONFIG =====
 const ADMIN_PASSWORD = 'Admin@AlSayf2026';
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzo8nagTFKqHCn4rc9LhZbBXMsJbRhKubX8R1n--MYGuQVmKPZzcgZv1E8SaR3z-GJb/exec';
-
-// ===== DEMO DATA (سيُستبدل بالبيانات الحقيقية من Sheets) =====
-let DB = [
-  {name:'محمد سعود السيف', father:'', gen:'الجيل الأول', city:'الرياض', phone:'0501234567', status:'متزوج', branch:'الرئيسي', approved:true},
-  {name:'منيف محمد السيف', father:'محمد سعود', gen:'الجيل الثاني', city:'الرياض', phone:'0557891234', status:'متزوج', branch:'الرياض', approved:true},
-  {name:'سعد محمد السيف', father:'محمد سعود', gen:'الجيل الثاني', city:'جدة', phone:'0508765432', status:'متزوج', branch:'جدة', approved:true},
-  {name:'خالد محمد السيف', father:'محمد سعود', gen:'الجيل الثاني', city:'الدمام', phone:'0556781234', status:'متزوج', branch:'الدمام', approved:true},
-  {name:'عبدالله منيف السيف', father:'منيف محمد', gen:'الجيل الثالث', city:'الرياض', phone:'0512345678', status:'أعزب', branch:'الرياض', approved:false},
-  {name:'نورة منيف السيف', father:'منيف محمد', gen:'الجيل الثالث', city:'الرياض', phone:'0598765432', status:'أعزبة', branch:'الرياض', approved:false},
-  {name:'فيصل سعد السيف', father:'سعد محمد', gen:'الجيل الثالث', city:'جدة', phone:'0561234567', status:'متزوج', branch:'جدة', approved:true},
-  {name:'ريم سعد السيف', father:'سعد محمد', gen:'الجيل الثالث', city:'جدة', phone:'0591234567', status:'متزوجة', branch:'جدة', approved:true},
-  {name:'محمد خالد السيف', father:'خالد محمد', gen:'الجيل الرابع', city:'الدمام', phone:'0572345678', status:'أعزب', branch:'الدمام', approved:false},
-];
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyXvPIkl7Z76z2bIaRG5v13PVn6UvM-dVGOT-ntZNDaIAl_qJiyu5v9a6vcalPmdtio/exec';
+let DB = [];
+let isLoaded = false;
 
 // ===== AUTH =====
 function doLogin() {
@@ -405,28 +406,39 @@ function doLogin() {
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('app').style.display = 'block';
     showPage('dashboard');
+    loadDataFromSheets();
   } else {
     document.getElementById('l-err').style.display = 'block';
   }
 }
 document.getElementById('l-pass').addEventListener('keyup', e => { if(e.key==='Enter') doLogin(); });
 
-// ===== JSONP callback من Apps Script =====
+function loadDataFromSheets() {
+  notif('جارٍ جلب البيانات...');
+  const s = document.createElement('script');
+  s.src = SCRIPT_URL + '?action=getFamilies&callback=handleFamilies&t=' + Date.now();
+  s.onerror = () => notif('تعذّر الاتصال بـ Sheets');
+  document.head.appendChild(s);
+  setTimeout(() => { try{document.head.removeChild(s);}catch(e){} }, 8000);
+}
+
 function handleFamilies(data) {
   if (data && data.families) {
     DB = data.families;
-    notif('✅ تم التحديث من Google Sheets — ' + DB.length + ' فرد');
-    const id = document.querySelector('.s-item.active')?.dataset?.page;
-    if (id) showPage(id);
+    isLoaded = true;
+    notif('تم التحديث — ' + DB.length + ' فرد');
+    const active = document.querySelector('.s-item.active');
+    if (active) showPage(active.dataset.page);
   }
 }
 
+function loadData() { loadDataFromSheets(); }
+
 // ===== NAVIGATION =====
 const pageTitles = {
-  dashboard:'لوحة التحكم الرئيسية', members:'أفراد الأسرة',
-  tree:'شجرة العائلة — المحرك الذكي', drive:'مجلدات Google Drive',
-  report:'التقارير الرسمية والطباعة', script:'Google Apps Script',
-  settings:'الإعدادات والأمان'
+  dashboard:'لوحة التحكم', members:'أفراد الأسرة',
+  tree:'شجرة العائلة', drive:'مجلدات Drive',
+  report:'التقارير', script:'Apps Script', settings:'الإعدادات'
 };
 
 document.querySelectorAll('.s-item').forEach(item => {
@@ -438,558 +450,215 @@ document.querySelectorAll('.s-item').forEach(item => {
 });
 
 function showPage(id) {
-  document.getElementById('page-title').textContent = pageTitles[id] || id;
+  document.getElementById('page-title').textContent = pageTitles[id]||id;
   const area = document.getElementById('content-area');
-  const pages = {
-    dashboard: renderDashboard,
-    members: renderMembers,
-    tree: renderTree,
-    drive: renderDrive,
-    report: renderReport,
-    script: renderScript,
-    settings: renderSettings
-  };
+  const pages = { dashboard:renderDashboard, members:renderMembers, tree:renderTree,
+    drive:renderDrive, report:renderReport, script:renderScript, settings:renderSettings };
   if (pages[id]) area.innerHTML = pages[id]();
-  if (id === 'script') initScriptTabs();
+  if (id==='script') setTimeout(initScriptTabs, 100);
 }
 
-// ===== NOTIFICATION =====
 function notif(msg) {
   const n = document.getElementById('notif');
-  n.textContent = msg;
-  n.classList.add('show');
-  setTimeout(() => n.classList.remove('show'), 2800);
+  n.textContent = msg; n.classList.add('show');
+  setTimeout(() => n.classList.remove('show'), 3000);
 }
 
-// ===== MODAL =====
 function openModal() { document.getElementById('add-modal').classList.remove('hidden'); }
 function closeModal() { document.getElementById('add-modal').classList.add('hidden'); }
 
 function saveMember() {
-  const name = document.getElementById('f-name').value.trim();
+  const name   = document.getElementById('f-name').value.trim();
   const father = document.getElementById('f-father').value.trim();
-  if (!name) { notif('⚠️ يرجى إدخال الاسم الكامل'); return; }
-  if (!father) { notif('⚠️ اسم الأب مطلوب لربط الشجرة'); return; }
-  const newMember = {
-    name, father,
-    gen: document.getElementById('f-gen').value,
-    city: document.getElementById('f-city').value,
-    phone: document.getElementById('f-phone').value,
-    status: document.getElementById('f-status').value,
-    branch: document.getElementById('f-branch').value,
-    approved: false
-  };
-  DB.push(newMember);
-  // إرسال للـ Apps Script
-  fetch(SCRIPT_URL, {
-    method: 'POST',
-    mode: 'no-cors',
-    headers: {'Content-Type': 'text/plain'},
-    body: JSON.stringify({
-      action: 'addMember',
-      ...newMember,
-      dob: document.getElementById('f-dob').value,
-      gender: document.getElementById('f-gender').value,
-      email: document.getElementById('f-email').value,
-      notes: document.getElementById('f-notes').value
-    })
-  }).catch(() => {});
-  notif(`✅ تم حفظ "${name}" في السجل وإرساله لـ Google Sheets`);
-  closeModal();
-  showPage('members');
+  if (!name)   { notif('يرجى إدخال الاسم'); return; }
+  if (!father) { notif('اسم الأب مطلوب'); return; }
+  const payload = { action:'addMember', name, father,
+    gen:document.getElementById('f-gen').value,
+    city:document.getElementById('f-city').value,
+    phone:document.getElementById('f-phone').value,
+    status:document.getElementById('f-status').value,
+    branch:document.getElementById('f-branch').value,
+    dob:document.getElementById('f-dob').value,
+    gender:document.getElementById('f-gender').value,
+    email:document.getElementById('f-email').value,
+    notes:document.getElementById('f-notes').value };
+  fetch(SCRIPT_URL, { method:'POST', mode:'no-cors',
+    headers:{'Content-Type':'text/plain'}, body:JSON.stringify(payload) })
+  .finally(() => {
+    notif('تم حفظ "' + name + '" في Sheets');
+    closeModal();
+    setTimeout(loadDataFromSheets, 2000);
+  });
 }
 
-// ===== LOAD DATA FROM SHEETS =====
-function loadData() {
-  notif('🔄 جارٍ التحديث من Google Sheets...');
-  const url = SCRIPT_URL + '?action=getFamilies&callback=handleFamilies';
-  const script = document.createElement('script');
-  script.src = url;
-  document.head.appendChild(script);
-  setTimeout(() => {
-    document.head.removeChild(script);
-    notif('⚠️ تعذّر الاتصال — يعمل بالبيانات المحلية');
-  }, 5000);
+function viewMember(i) {
+  const m = DB[i]; if(!m) return;
+  const html = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;font-size:13px">'
+    + '<div><b>الاسم:</b> '+m.name+'</div>'
+    + '<div><b>اسم الأب:</b> '+(m.father||'—')+'</div>'
+    + '<div><b>الدور:</b> '+(m.gen||m.role||'—')+'</div>'
+    + '<div><b>المدينة:</b> '+(m.city||'—')+'</div>'
+    + '<div><b>الجوال:</b> <span dir="ltr">'+(m.phone||'—')+'</span></div>'
+    + '<div><b>الحالة:</b> '+(m.status||'—')+'</div>'
+    + '<div><b>الفرع:</b> '+(m.branch||'—')+'</div>'
+    + '<div><b>الاعتماد:</b> '+(m.approved?'✅ معتمد':'⏳ مراجعة')+'</div>'
+    + (m.notes?'<div style="grid-column:1/-1"><b>ملاحظات:</b> '+m.notes+'</div>':'')
+    + '</div>'
+    + '<div style="margin-top:14px;display:flex;gap:8px">'
+    + '<button class="btn btn-primary btn-sm" onclick="approveMember('+i+');closeViewModal()">✅ اعتماد</button>'
+    + '<button class="btn btn-outline btn-sm" onclick="closeViewModal()">إغلاق</button></div>';
+  document.getElementById('view-name').textContent = m.name;
+  document.getElementById('view-body').innerHTML = html;
+  document.getElementById('view-modal').classList.remove('hidden');
 }
 
-// ===== RENDER DASHBOARD =====
-function renderDashboard() {
-  const total = DB.length;
-  const approved = DB.filter(m => m.approved).length;
-  const gens = [...new Set(DB.map(m => m.gen))].length;
-  return `
-  <div class="stats-grid">
-    <div class="stat-card"><div class="s-ico">👨‍👩‍👧‍👦</div><div class="s-num">${total}</div><div class="s-lbl">إجمالي أفراد الأسرة</div></div>
-    <div class="stat-card"><div class="s-ico">✅</div><div class="s-num">${approved}</div><div class="s-lbl">معتمدون في السجل</div></div>
-    <div class="stat-card"><div class="s-ico">🌳</div><div class="s-num">${gens}</div><div class="s-lbl">أجيال موثقة</div></div>
-    <div class="stat-card"><div class="s-ico">⏳</div><div class="s-num">${total-approved}</div><div class="s-lbl">قيد المراجعة</div></div>
-  </div>
-  <div class="card">
-    <div class="card-head"><h3>📋 آخر الإضافات للسجل</h3><span class="badge b-green">● متصل بـ Google Sheets</span></div>
-    <table class="tbl">
-      <tr><th>الاسم</th><th>اسم الأب</th><th>الجيل</th><th>المدينة</th><th>الحالة</th></tr>
-      ${DB.slice(-5).reverse().map(m => `
-      <tr>
-        <td><b>${m.name}</b></td>
-        <td>${m.father || '—'}</td>
-        <td><span class="badge b-gold">${m.gen}</span></td>
-        <td>${m.city || '—'}</td>
-        <td><span class="badge ${m.approved ? 'b-green' : 'b-orange'}">${m.approved ? '✓ معتمد' : '⏳ مراجعة'}</span></td>
-      </tr>`).join('')}
-    </table>
-  </div>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
-    <div class="card">
-      <div class="card-head"><h3>🗺️ توزيع الأفراد بالمدن</h3></div>
-      <div class="card-body">
-        ${getCityStats().map(c => `
-        <div class="bar-row">
-          <span class="bar-label">${c.city}</span>
-          <div class="bar-track"><div class="bar-fill" style="width:${c.pct}%"></div></div>
-          <span class="bar-num">${c.count}</span>
-        </div>`).join('')}
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-head"><h3>⚡ روابط سريعة</h3></div>
-      <div class="card-body" style="display:flex;flex-direction:column;gap:8px">
-        <button class="btn btn-outline" style="justify-content:flex-start" onclick="notif('📊 فتح Google Sheets...')">📊 فتح قاعدة البيانات</button>
-        <button class="btn btn-outline" style="justify-content:flex-start" onclick="notif('📁 فتح Google Drive...')">📁 فتح مجلدات الأسرة</button>
-        <button class="btn btn-outline" style="justify-content:flex-start;cursor:pointer" onclick="document.querySelector('[data-page=tree]').click()">🌳 عرض شجرة العائلة</button>
-        <button class="btn btn-primary" style="justify-content:flex-start" onclick="document.querySelector('[data-page=report]').click()">📄 طباعة تقرير شامل</button>
-      </div>
-    </div>
-  </div>`;
+function closeViewModal() { document.getElementById('view-modal').classList.add('hidden'); }
+
+function approveMember(i) {
+  if(DB[i]) { DB[i].approved=true; notif('تم اعتماد: '+DB[i].name); showPage('members'); }
+}
+
+function exportCSV() {
+  const h = ['الاسم','اسم الأب','الدور','المدينة','الجوال','الحالة'];
+  const r = DB.map(m => [m.name,m.father,m.gen||m.role,m.city,m.phone,m.approved?'معتمد':'جديد'].join(','));
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent('\uFEFF'+h.join(',')+' \n'+r.join('\n'));
+  a.download = 'alsayf.csv'; a.click(); notif('تم التصدير');
 }
 
 function getCityStats() {
-  const counts = {};
-  DB.forEach(m => { if(m.city) counts[m.city] = (counts[m.city]||0)+1; });
-  const sorted = Object.entries(counts).sort((a,b)=>b[1]-a[1]);
-  const max = sorted[0]?.[1] || 1;
-  return sorted.map(([city,count]) => ({city, count, pct: Math.round(count/max*100)}));
+  const c={};
+  DB.forEach(m=>{ if(m.city) c[m.city]=(c[m.city]||0)+1; });
+  const s=Object.entries(c).sort((a,b)=>b[1]-a[1]).slice(0,5);
+  const max=s[0]?.[1]||1;
+  return s.map(([city,count])=>({city,count,pct:Math.round(count/max*100)}));
 }
 
-// ===== RENDER MEMBERS =====
+function renderDashboard() {
+  if(!isLoaded) return '<div style="text-align:center;padding:60px;color:var(--muted)"><div style="font-size:40px">⏳</div><p style="margin-top:12px">جارٍ تحميل البيانات...</p></div>';
+  const total=DB.length, approved=DB.filter(m=>m.approved).length;
+  const gens=[...new Set(DB.map(m=>m.gen||m.role).filter(Boolean))].length;
+  return '<div class="stats-grid">'
+    +'<div class="stat-card"><div class="s-ico">👨‍👩‍👧‍👦</div><div class="s-num">'+total+'</div><div class="s-lbl">إجمالي الأفراد</div></div>'
+    +'<div class="stat-card"><div class="s-ico">✅</div><div class="s-num">'+approved+'</div><div class="s-lbl">معتمدون</div></div>'
+    +'<div class="stat-card"><div class="s-ico">🌳</div><div class="s-num">'+gens+'</div><div class="s-lbl">أدوار وأجيال</div></div>'
+    +'<div class="stat-card"><div class="s-ico">⏳</div><div class="s-num">'+(total-approved)+'</div><div class="s-lbl">قيد المراجعة</div></div>'
+    +'</div>'
+    +'<div class="card"><div class="card-head"><h3>آخر الإضافات</h3><span class="badge b-green">● متصل بـ Sheets</span></div>'
+    +'<table class="tbl"><tr><th>الاسم</th><th>اسم الأب</th><th>الدور</th><th>المدينة</th><th>الحالة</th><th></th></tr>'
+    +DB.slice(-6).reverse().map((m,i)=>'<tr><td><b>'+m.name+'</b></td><td>'+(m.father||'—')+'</td>'
+      +'<td><span class="badge b-gold">'+(m.gen||m.role||'—')+'</span></td><td>'+(m.city||'—')+'</td>'
+      +'<td><span class="badge '+(m.approved?'b-green':'b-orange')+'">'+(m.approved?'✓ معتمد':'⏳')+'</span></td>'
+      +'<td><button class="btn btn-outline btn-sm" onclick="viewMember('+(DB.length-1-i)+')">👁️ عرض</button></td></tr>').join('')
+    +'</table></div>'
+    +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">'
+    +'<div class="card"><div class="card-head"><h3>🗺️ توزيع المدن</h3></div><div class="card-body">'
+    +(getCityStats().map(c=>'<div class="bar-row"><span class="bar-label">'+c.city+'</span><div class="bar-track"><div class="bar-fill" style="width:'+c.pct+'%"></div></div><span class="bar-num">'+c.count+'</span></div>').join('')||'<p style="color:var(--muted);font-size:13px">لا توجد بيانات</p>')
+    +'</div></div>'
+    +'<div class="card"><div class="card-head"><h3>⚡ روابط سريعة</h3></div><div class="card-body" style="display:flex;flex-direction:column;gap:8px">'
+    +'<button class="btn btn-outline" style="justify-content:flex-start" onclick="window.open('https://drive.google.com/drive/folders/1JUINZqf0AWNjcotEyy456QOTQV2HMnXG','_blank')">📁 فتح Drive</button>'
+    +'<button class="btn btn-outline" style="justify-content:flex-start" onclick="document.querySelector('[data-page=tree]').click()">🌳 شجرة العائلة</button>'
+    +'<button class="btn btn-primary" style="justify-content:flex-start" onclick="document.querySelector('[data-page=report]').click()">📄 تقرير شامل</button>'
+    +'</div></div></div>';
+}
+
 function renderMembers() {
-  return `
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px">
-    <div style="display:flex;gap:8px;flex-wrap:wrap">
-      <input id="search-inp" placeholder="🔍 البحث بالاسم..." style="padding:8px 12px;border:1px solid var(--border);border-radius:7px;font-size:13px;width:200px;font-family:inherit;outline:none" oninput="filterMembers()">
-      <select id="gen-filter" style="padding:8px 12px;border:1px solid var(--border);border-radius:7px;font-size:13px;font-family:inherit;outline:none" onchange="filterMembers()">
-        <option value="">كل الأجيال</option>
-        <option>الجيل الأول</option><option>الجيل الثاني</option>
-        <option>الجيل الثالث</option><option>الجيل الرابع</option>
-      </select>
-    </div>
-    <button class="btn btn-primary" onclick="openModal()">➕ إضافة فرد</button>
-  </div>
-  <div class="card">
-    <div class="card-head">
-      <h3>👥 قائمة أفراد الأسرة (<span id="members-count">${DB.length}</span> فرداً)</h3>
-      <button class="btn btn-outline btn-sm" onclick="notif('📥 جارٍ تصدير البيانات...')">📥 تصدير Excel</button>
-    </div>
-    <div id="members-table">
-      ${renderMembersTable(DB)}
-    </div>
-  </div>`;
+  return '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:8px">'
+    +'<div style="display:flex;gap:8px;flex-wrap:wrap">'
+    +'<input id="search-inp" placeholder="🔍 البحث..." style="padding:8px 12px;border:1px solid var(--border);border-radius:7px;font-size:13px;width:180px;font-family:inherit;outline:none" oninput="filterMembers()">'
+    +'<select id="city-filter" style="padding:8px 12px;border:1px solid var(--border);border-radius:7px;font-size:13px;font-family:inherit;outline:none" onchange="filterMembers()">'
+    +'<option value="">كل المدن</option>'
+    +[...new Set(DB.map(m=>m.city).filter(Boolean))].map(c=>'<option>'+c+'</option>').join('')
+    +'</select></div>'
+    +'<div style="display:flex;gap:8px">'
+    +'<button class="btn btn-outline btn-sm" onclick="loadDataFromSheets()">🔄</button>'
+    +'<button class="btn btn-primary" onclick="openModal()">➕ إضافة فرد</button></div></div>'
+    +'<div class="card"><div class="card-head"><h3>👥 أفراد الأسرة (<span id="members-count">'+DB.length+'</span>)</h3>'
+    +'<button class="btn btn-outline btn-sm" onclick="exportCSV()">📥 CSV</button></div>'
+    +'<div id="members-table">'+renderMembersTable(DB)+'</div></div>';
 }
 
 function renderMembersTable(list) {
-  if (!list.length) return '<div style="padding:20px;text-align:center;color:var(--muted)">لا توجد نتائج</div>';
-  return `<table class="tbl">
-    <tr><th>الاسم</th><th>اسم الأب</th><th>الجيل</th><th>الجوال</th><th>المدينة</th><th>الحالة</th><th>إجراءات</th></tr>
-    ${list.map((m,i) => `<tr>
-      <td><b>${m.name}</b></td>
-      <td>${m.father || '—'}</td>
-      <td><span class="badge b-blue">${m.gen}</span></td>
-      <td dir="ltr">${m.phone || '—'}</td>
-      <td>${m.city || '—'}</td>
-      <td><span class="badge ${m.approved ? 'b-green' : 'b-orange'}">${m.approved ? '✓ معتمد' : '⏳ مراجعة'}</span></td>
-      <td><button class="btn btn-outline btn-sm" onclick="notif('👁️ عرض ملف: ${m.name}')">عرض</button></td>
-    </tr>`).join('')}
-  </table>`;
+  if(!list.length) return '<div style="padding:30px;text-align:center;color:var(--muted)">لا توجد نتائج</div>';
+  return '<table class="tbl"><tr><th>#</th><th>الاسم</th><th>اسم الأب</th><th>الدور</th><th>الجوال</th><th>المدينة</th><th>الحالة</th><th>إجراءات</th></tr>'
+    +list.map((m,i)=>'<tr><td style="color:var(--muted);font-size:11px">'+(i+1)+'</td><td><b>'+m.name+'</b></td>'
+      +'<td>'+(m.father||'—')+'</td><td><span class="badge b-blue">'+(m.gen||m.role||'—')+'</span></td>'
+      +'<td dir="ltr" style="font-size:12px">'+(m.phone||'—')+'</td><td>'+(m.city||'—')+'</td>'
+      +'<td><span class="badge '+(m.approved?'b-green':'b-orange')+'">'+(m.approved?'✓':'⏳')+'</span></td>'
+      +'<td style="display:flex;gap:4px">'
+      +'<button class="btn btn-outline btn-sm" onclick="viewMember('+DB.indexOf(m)+')">👁️ عرض</button>'
+      +'<button class="btn btn-outline btn-sm" onclick="approveMember('+DB.indexOf(m)+')">✅</button>'
+      +'</td></tr>').join('')+'</table>';
 }
 
 function filterMembers() {
-  const q = document.getElementById('search-inp')?.value.toLowerCase() || '';
-  const g = document.getElementById('gen-filter')?.value || '';
-  const filtered = DB.filter(m =>
-    (!q || m.name.toLowerCase().includes(q) || (m.father||'').toLowerCase().includes(q)) &&
-    (!g || m.gen === g)
-  );
-  const t = document.getElementById('members-table');
-  const c = document.getElementById('members-count');
-  if (t) t.innerHTML = renderMembersTable(filtered);
-  if (c) c.textContent = filtered.length;
+  const q=document.getElementById('search-inp')?.value.toLowerCase()||'';
+  const ct=document.getElementById('city-filter')?.value||'';
+  const f=DB.filter(m=>(!q||m.name.toLowerCase().includes(q)||(m.father||'').toLowerCase().includes(q))&&(!ct||m.city===ct));
+  const t=document.getElementById('members-table');
+  const c=document.getElementById('members-count');
+  if(t) t.innerHTML=renderMembersTable(f);
+  if(c) c.textContent=f.length;
 }
 
-// ===== RENDER TREE =====
 function renderTree() {
-  // بناء الشجرة من حقل "اسم الأب"
-  const childrenMap = {};
-  DB.forEach(m => {
-    const key = m.father || '__root__';
-    if (!childrenMap[key]) childrenMap[key] = [];
-    childrenMap[key].push(m);
-  });
-  const allChildren = new Set(DB.filter(m=>m.father).map(m=>m.name));
-  const roots = DB.filter(m => !allChildren.has(m.name));
-
-  function nodeHtml(m, isRoot=false) {
-    const ico = m.name.includes('نورة')||m.name.includes('ريم') ? '👧' : (isRoot ? '👴' : '👨');
-    return `<div class="t-node ${isRoot?'root':''}" onclick="notif('👤 ${m.name} — ${m.city||''}')">
-      <div style="font-size:${isRoot?'20':'16'}px;margin-bottom:4px">${ico}</div>
-      <div class="n-name">${m.name.replace(' السيف','')}</div>
-      <div class="n-info">${m.city||m.gen}</div>
-    </div>`;
-  }
-
-  function renderLevel(members, isRoot=false) {
-    if (!members.length) return '';
-    return `<div class="t-row">${members.map(m=>nodeHtml(m,isRoot)).join('')}</div>`;
-  }
-
-  // الجيل الأول
-  const gen1 = DB.filter(m=>m.gen==='الجيل الأول');
-  const gen2 = DB.filter(m=>m.gen==='الجيل الثاني');
-  const gen3 = DB.filter(m=>m.gen==='الجيل الثالث');
-  const gen4 = DB.filter(m=>m.gen==='الجيل الرابع');
-
-  let html = `
-  <div class="card">
-    <div class="card-head">
-      <h3>🌳 شجرة عائلة السيف — محرك الشجرة الذكي</h3>
-      <div style="display:flex;gap:8px">
-        <button class="btn btn-outline btn-sm" onclick="notif('📥 تصدير الشجرة كـ PDF...')">📥 PDF</button>
-        <button class="btn btn-outline btn-sm" onclick="notif('🖼️ تصدير كصورة...')">🖼️ PNG</button>
-      </div>
-    </div>
-    <div class="card-body tree-wrap">`;
-
-  if (gen1.length) {
-    html += `<div class="t-level-label"><span>الجيل الأول</span></div>
-    ${renderLevel(gen1, true)}
-    <div class="t-connector"><div class="t-vline"></div></div>`;
-  }
-  if (gen2.length) {
-    html += `<div class="t-level-label"><span>الجيل الثاني</span></div>
-    ${renderLevel(gen2)}
-    <div class="t-connector"><div class="t-vline"></div></div>`;
-  }
-  if (gen3.length) {
-    html += `<div class="t-level-label"><span>الجيل الثالث</span></div>
-    ${renderLevel(gen3)}`;
-    if (gen4.length) html += `<div class="t-connector"><div class="t-vline"></div></div>`;
-  }
-  if (gen4.length) {
-    html += `<div class="t-level-label"><span>الجيل الرابع</span></div>
-    ${renderLevel(gen4)}`;
-  }
-
-  html += `<div class="t-tip">💡 الشجرة تُبنى تلقائياً من حقل "اسم الأب" — انقر على أي فرد لعرض تفاصيله</div>
-    </div></div>`;
-  return html;
+  if(!DB.length) return '<div class="card"><div class="card-body" style="text-align:center;padding:40px;color:var(--muted)">لا توجد بيانات — اضغط تحديث</div></div>';
+  const rows = DB.map(m=>'<tr><td><b>'+m.name+'</b></td><td>'+(m.father||'الجذر')+'</td><td>'+(m.gen||m.role||'—')+'</td><td>'+(m.city||'—')+'</td>'
+    +'<td><button class="btn btn-outline btn-sm" onclick="viewMember('+DB.indexOf(m)+')">👁️</button></td></tr>').join('');
+  return '<div class="card"><div class="card-head"><h3>🌳 شجرة العائلة ('+DB.length+' فرد)</h3>'
+    +'<button class="btn btn-outline btn-sm" onclick="loadDataFromSheets()">🔄 تحديث</button></div>'
+    +'<table class="tbl"><tr><th>الاسم</th><th>اسم الأب</th><th>الدور</th><th>المدينة</th><th></th></tr>'+rows+'</table></div>';
 }
 
-// ===== RENDER DRIVE =====
 function renderDrive() {
-  const folders = DB.filter(m => m.gen === 'الجيل الثاني' || m.gen === 'الجيل الأول');
-  return `
-  <div class="card">
-    <div class="card-head">
-      <h3>📁 مجلدات الأسرة في Google Drive</h3>
-      <span class="badge b-green">● ينشأ تلقائياً</span>
-    </div>
-    <div class="card-body">
-      <p style="font-size:13px;color:var(--muted);margin-bottom:18px">تُنشأ هذه المجلدات تلقائياً عند إضافة أي رب أسرة جديد عبر النموذج الإلكتروني</p>
-      <div class="folders-grid">
-        ${folders.map(m => `
-        <div class="folder-card" onclick="notif('📁 فتح مجلد: ${m.name}')">
-          <div class="fi">📂</div>
-          <div class="fn">${m.name}</div>
-          <div class="fm">${m.city}</div>
-        </div>`).join('')}
-        <div class="folder-card" style="border-style:dashed" onclick="notif('📁 إنشاء مجلد جديد تلقائياً...')">
-          <div class="fi">➕</div>
-          <div class="fn" style="color:var(--muted)">مجلد جديد</div>
-          <div class="fm">تلقائي</div>
-        </div>
-      </div>
-    </div>
-  </div>`;
+  return '<div class="card"><div class="card-head"><h3>📁 مجلدات Drive</h3>'
+    +'<button class="btn btn-outline btn-sm" onclick="window.open('https://drive.google.com/drive/folders/1JUINZqf0AWNjcotEyy456QOTQV2HMnXG','_blank')">🔗 فتح Drive</button></div>'
+    +'<div class="card-body"><p style="font-size:13px;color:var(--muted);margin-bottom:18px">تُنشأ المجلدات تلقائياً لكل رب أسرة</p>'
+    +'<div class="folders-grid">'
+    +DB.filter(m=>m.role==='رب الأسرة').map(m=>'<div class="folder-card" onclick="notif(''+m.name+'')"><div class="fi">📂</div><div class="fn">'+m.name+'</div><div class="fm">'+(m.city||'')+'</div></div>').join('')
+    +'</div></div></div>';
 }
 
-// ===== RENDER REPORT =====
 function renderReport() {
-  const byGen = {};
-  DB.forEach(m => { if(!byGen[m.gen]) byGen[m.gen] = []; byGen[m.gen].push(m); });
-  let sections = '';
-  Object.entries(byGen).forEach(([gen, members]) => {
-    sections += `
-    <div class="card">
-      <div class="card-head"><h3>${gen}</h3></div>
-      <div class="card-body" style="padding:14px 20px">
-        ${members.map(m => `
-        <div class="rep-member">
-          <div class="rep-mhead">
-            <div>
-              <div class="rep-mname">${m.name}</div>
-              <div style="font-size:12px;color:var(--muted)">ابن ${m.father||'—'} | ${m.branch||'—'}</div>
-            </div>
-            <span class="badge ${m.approved?'b-green':'b-orange'}">${m.approved?'✓ معتمد':'⏳ مراجعة'}</span>
-          </div>
-          <div class="rep-details">
-            <span>الجوال: </span><span>${m.phone||'—'}</span>
-            <span>المدينة: </span><span>${m.city||'—'}</span>
-            <span>الحالة: </span><span>${m.status||'—'}</span>
-          </div>
-        </div>`).join('')}
-      </div>
-    </div>`;
-  });
-  return `
-  <div style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap">
-    <button class="btn btn-primary" onclick="window.print()">🖨️ طباعة التقرير</button>
-    <button class="btn btn-outline" onclick="notif('📄 تصدير PDF — يُنفَّذ عبر Google Apps Script')">📄 تصدير PDF</button>
-    <button class="btn btn-outline" onclick="notif('📊 تصدير Excel...')">📊 تصدير Excel</button>
-  </div>
-  <div id="print-area">
-    <div class="rep-head">
-      <h2>🏛️ سجل أسرة السيف — التقرير الرسمي الشامل</h2>
-      <p>إجمالي الأفراد الموثقين: ${DB.length} فرداً عبر ${Object.keys(byGen).length} أجيال</p>
-    </div>
-    ${sections}
-  </div>`;
+  return '<div style="display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap">'
+    +'<button class="btn btn-primary" onclick="window.print()">🖨️ طباعة</button>'
+    +'<button class="btn btn-outline" onclick="exportCSV()">📊 CSV</button></div>'
+    +'<div class="rep-head"><h2>🏛️ سجل أسرة السيف</h2><p>'+DB.length+' فرد موثق</p></div>'
+    +'<div class="card"><table class="tbl"><tr><th>#</th><th>الاسم</th><th>اسم الأب</th><th>الدور</th><th>المدينة</th><th>الجوال</th><th>الحالة</th></tr>'
+    +DB.map((m,i)=>'<tr><td>'+(i+1)+'</td><td><b>'+m.name+'</b></td><td>'+(m.father||'—')+'</td>'
+      +'<td>'+(m.gen||m.role||'—')+'</td><td>'+(m.city||'—')+'</td>'
+      +'<td dir="ltr">'+(m.phone||'—')+'</td>'
+      +'<td><span class="badge '+(m.approved?'b-green':'b-orange')+'">'+(m.approved?'✓ معتمد':'⏳')+'</span></td></tr>').join('')
+    +'</table></div>';
 }
 
-// ===== RENDER SCRIPT =====
 function renderScript() {
-  return `
-  <div class="card">
-    <div class="card-head">
-      <h3>⚙️ كود Google Apps Script الجاهز للنسخ</h3>
-      <button class="btn btn-primary btn-sm" onclick="copyScript()">📋 نسخ الكود الحالي</button>
-    </div>
-    <div class="card-body" style="padding:0">
-      <div class="code-tabs" id="script-tabs">
-        <button class="code-tab active" onclick="switchTab(0)">doPost — استقبال البيانات</button>
-        <button class="code-tab" onclick="switchTab(1)">إنشاء المجلدات</button>
-        <button class="code-tab" onclick="switchTab(2)">تصدير PDF</button>
-        <button class="code-tab" onclick="switchTab(3)">محرك الشجرة</button>
-      </div>
-      <div id="script-content" class="code-block"></div>
-    </div>
-  </div>`;
+  return '<div class="card"><div class="card-head"><h3>⚙️ Apps Script</h3></div>'
+    +'<div class="card-body"><p style="font-size:13px;color:var(--muted)">رابط النشر الحالي:</p>'
+    +'<div class="code-block" style="font-size:12px;word-break:break-all">'+SCRIPT_URL+'</div></div></div>';
 }
 
-const scripts = [
-`<span class="cc">// ===== AlSayf Family Archive — Google Apps Script =====</span>
-<span class="cc">// الصق هذا الكود في Apps Script المرتبط بـ Google Sheet</span>
-
-<span class="ck">const</span> SHEET_ID = <span class="cs">"PASTE_YOUR_SHEET_ID_HERE"</span>;
-<span class="ck">const</span> DRIVE_ID = <span class="cs">"PASTE_YOUR_DRIVE_FOLDER_ID_HERE"</span>;
-
-<span class="cf">function</span> <span class="cf">doPost</span>(e) {
-  <span class="ck">try</span> {
-    <span class="ck">const</span> data = JSON.parse(e.postData.contents);
-    <span class="ck">const</span> sheet = SpreadsheetApp.<span class="cf">openById</span>(SHEET_ID)
-      .<span class="cf">getSheetByName</span>(<span class="cs">"أفراد الأسرة"</span>);
-
-    sheet.<span class="cf">appendRow</span>([
-      <span class="ck">new</span> Date(), data.name, data.father,
-      data.dob, data.gender, data.idNumber,
-      data.phone, data.email, data.city,
-      data.gen, data.branch, data.notes, <span class="cs">"جديد"</span>
-    ]);
-
-    <span class="cf">createFamilyFolder</span>(data.name);
-
-    <span class="ck">return</span> ContentService
-      .<span class="cf">createTextOutput</span>(JSON.<span class="cf">stringify</span>({success:<span class="ck">true</span>}))
-      .<span class="cf">setMimeType</span>(ContentService.MimeType.JSON);
-
-  } <span class="ck">catch</span>(err) {
-    <span class="ck">return</span> ContentService
-      .<span class="cf">createTextOutput</span>(JSON.<span class="cf">stringify</span>({error:err.message}))
-      .<span class="cf">setMimeType</span>(ContentService.MimeType.JSON);
-  }
-}
-
-<span class="cf">function</span> <span class="cf">doGet</span>(e) {
-  <span class="ck">if</span>(e.parameter.action === <span class="cs">"getFamilies"</span>) {
-    <span class="ck">const</span> rows = SpreadsheetApp.<span class="cf">openById</span>(SHEET_ID)
-      .<span class="cf">getSheetByName</span>(<span class="cs">"أفراد الأسرة"</span>)
-      .<span class="cf">getDataRange</span>().<span class="cf">getValues</span>();
-    <span class="ck">const</span> families = rows.slice(1).<span class="cf">map</span>(r => ({
-      name:r[1], father:r[2], gen:r[9], city:r[8],
-      phone:r[6], status:r[5], branch:r[10], approved:r[12]==='معتمد'
-    }));
-    <span class="ck">return</span> ContentService
-      .<span class="cf">createTextOutput</span>(JSON.<span class="cf">stringify</span>({families}))
-      .<span class="cf">setMimeType</span>(ContentService.MimeType.JSON);
-  }
-}`,
-
-`<span class="cc">// ===== إنشاء مجلد تلقائي لكل رب أسرة =====</span>
-
-<span class="cf">function</span> <span class="cf">createFamilyFolder</span>(name) {
-  <span class="ck">const</span> root = DriveApp.<span class="cf">getFolderById</span>(DRIVE_ID);
-  <span class="ck">const</span> existing = root.<span class="cf">getFoldersByName</span>(name);
-  <span class="ck">if</span>(existing.<span class="cf">hasNext</span>()) <span class="ck">return</span> existing.<span class="cf">next</span>();
-
-  <span class="ck">const</span> folder = root.<span class="cf">createFolder</span>(name);
-  folder.<span class="cf">createFolder</span>(<span class="cs">"📄 وثائق الهوية"</span>);
-  folder.<span class="cf">createFolder</span>(<span class="cs">"📸 الصور الشخصية"</span>);
-  folder.<span class="cf">createFolder</span>(<span class="cs">"📋 شهادات ووثائق رسمية"</span>);
-  folder.<span class="cf">createFolder</span>(<span class="cs">"🏠 وثائق العقارات"</span>);
-
-  <span class="cc">// إنشاء ملف ترحيبي</span>
-  <span class="ck">const</span> doc = DocumentApp.<span class="cf">create</span>(<span class="cs">\`ملف \${name} — أرشيف السيف\`</span>);
-  doc.getBody().<span class="cf">setText</span>(<span class="cs">\`أرشيف عائلة السيف\\nالفرد: \${name}\\nتاريخ الإنشاء: \${new Date()}\`</span>);
-  DriveApp.<span class="cf">getFileById</span>(doc.<span class="cf">getId</span>()).<span class="cf">moveTo</span>(folder);
-
-  <span class="ck">return</span> folder;
-}`,
-
-`<span class="cc">// ===== تصدير التقرير الرسمي كـ PDF بدعم العربية =====</span>
-
-<span class="cf">function</span> <span class="cf">generatePDFReport</span>() {
-  <span class="ck">const</span> rows = SpreadsheetApp.<span class="cf">openById</span>(SHEET_ID)
-    .<span class="cf">getSheetByName</span>(<span class="cs">"أفراد الأسرة"</span>)
-    .<span class="cf">getDataRange</span>().<span class="cf">getValues</span>();
-
-  <span class="ck">let</span> html = <span class="cs">\`&lt;html dir="rtl"&gt;&lt;head&gt;
-  &lt;meta charset="UTF-8"&gt;
-  &lt;style&gt;
-    body{font-family:Arial,sans-serif;direction:rtl}
-    .header{background:#1a1208;color:#c8a55a;text-align:center;padding:20px}
-    h1{margin:0;font-size:22px}
-    table{width:100%;border-collapse:collapse;margin-top:20px}
-    th{background:#f0ead8;padding:8px;border:1px solid #e0d0a8}
-    td{padding:8px;border:1px solid #e0d0a8}
-    tr:nth-child(even){background:#faf7f0}
-  &lt;/style&gt;&lt;/head&gt;&lt;body&gt;
-  &lt;div class="header"&gt;
-    &lt;h1&gt;🏛️ سجل أسرة السيف الرسمي&lt;/h1&gt;
-    &lt;p&gt;إجمالي الأفراد: \${rows.length-1}&lt;/p&gt;
-  &lt;/div&gt;
-  &lt;table&gt;
-    &lt;tr&gt;&lt;th&gt;الاسم&lt;/th&gt;&lt;th&gt;الأب&lt;/th&gt;&lt;th&gt;الجيل&lt;/th&gt;&lt;th&gt;المدينة&lt;/th&gt;&lt;/tr&gt;
-    \${rows.slice(1).map(r => \`
-      &lt;tr&gt;&lt;td&gt;\${r[1]}&lt;/td&gt;&lt;td&gt;\${r[2]}&lt;/td&gt;&lt;td&gt;\${r[9]}&lt;/td&gt;&lt;td&gt;\${r[8]}&lt;/td&gt;&lt;/tr&gt;
-    \`).join('')}
-  &lt;/table&gt;&lt;/body&gt;&lt;/html&gt;\`</span>;
-
-  <span class="ck">const</span> blob = Utilities.<span class="cf">newBlob</span>(html, <span class="cs">'text/html'</span>)
-    .<span class="cf">getAs</span>(<span class="cs">'application/pdf'</span>)
-    .<span class="cf">setName</span>(<span class="cs">\`تقرير-السيف-\${Utilities.formatDate(new Date(),'Asia/Riyadh','yyyy-MM-dd')}.pdf\`</span>);
-
-  DriveApp.<span class="cf">getFolderById</span>(DRIVE_ID).<span class="cf">createFile</span>(blob);
-  <span class="ck">return</span> <span class="cs">"✅ تم إنشاء PDF وحفظه في Drive"</span>;
-}`,
-
-`<span class="cc">// ===== محرك شجرة العائلة الذكي =====</span>
-<span class="cc">// يقرأ حقل "اسم الأب" ويبني الهيكل الشجري تلقائياً</span>
-
-<span class="cf">function</span> <span class="cf">buildFamilyTree</span>() {
-  <span class="ck">const</span> rows = SpreadsheetApp.<span class="cf">openById</span>(SHEET_ID)
-    .<span class="cf">getSheetByName</span>(<span class="cs">"أفراد الأسرة"</span>)
-    .<span class="cf">getDataRange</span>().<span class="cf">getValues</span>();
-
-  <span class="ck">const</span> members = {};
-  <span class="ck">const</span> tree = {};   <span class="cc">// father → [children]</span>
-
-  rows.slice(1).<span class="cf">forEach</span>(row => {
-    <span class="ck">const</span> name = row[1], father = row[2];
-    members[name] = {name, father, gen:row[9], city:row[8]};
-    <span class="ck">if</span>(father) {
-      <span class="ck">if</span>(!tree[father]) tree[father] = [];
-      tree[father].<span class="cf">push</span>(name);
-    }
-  });
-
-  <span class="cc">// إيجاد الجذور (من لا أب مسجل)</span>
-  <span class="ck">const</span> allChildren = <span class="ck">new</span> Set(Object.<span class="cf">values</span>(tree).<span class="cf">flat</span>());
-  <span class="ck">const</span> roots = Object.<span class="cf">keys</span>(members)
-    .<span class="cf">filter</span>(n => !allChildren.<span class="cf">has</span>(n));
-
-  <span class="ck">return</span> {tree, members, roots};
-}
-
-<span class="cc">// استدعاء الشجرة من Frontend:</span>
-<span class="cc">// fetch(SCRIPT_URL + '?action=getTree')</span>`
-];
-
-let currentTab = 0;
-function initScriptTabs() {
-  const c = document.getElementById('script-content');
-  if (c) c.innerHTML = scripts[0];
-}
-function switchTab(i) {
-  currentTab = i;
-  document.querySelectorAll('.code-tab').forEach((t,idx) => t.classList.toggle('active', idx===i));
-  const c = document.getElementById('script-content');
-  if (c) c.innerHTML = scripts[i];
-}
-function copyScript() {
-  const text = document.getElementById('script-content')?.innerText || '';
-  navigator.clipboard?.writeText(text).then(()=>notif('📋 تم نسخ الكود!')).catch(()=>notif('📋 حدد الكود يدوياً وانسخه'));
-}
-
-// ===== RENDER SETTINGS =====
 function renderSettings() {
-  return `
-  <div class="settings-grid">
-    <div class="card">
-      <div class="card-head"><h3>🔒 تغيير كلمة المرور</h3></div>
-      <div class="card-body">
-        <div style="display:flex;flex-direction:column;gap:12px">
-          <div class="fl"><label>كلمة المرور الحالية</label><input type="password" placeholder="••••••••"></div>
-          <div class="fl"><label>كلمة المرور الجديدة</label><input type="password" placeholder="8 أحرف على الأقل"></div>
-          <div class="fl"><label>تأكيد كلمة المرور</label><input type="password" placeholder="أعد الإدخال"></div>
-          <button class="btn btn-primary" onclick="notif('🔒 تم تغيير كلمة المرور بنجاح')">حفظ التغييرات</button>
-        </div>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-head"><h3>🔗 ربط الخدمات</h3></div>
-      <div class="card-body">
-        <div style="display:flex;flex-direction:column;gap:12px">
-          <div class="fl"><label>معرّف Google Sheet</label><input placeholder="1BxiMVs0XRA5..." value=""></div>
-          <div class="fl"><label>معرّف مجلد Drive</label><input placeholder="1y2zABC..." value=""></div>
-          <div class="fl"><label>رابط Apps Script</label><input value="${SCRIPT_URL}" placeholder="https://script.google.com/..."></div>
-          <button class="btn btn-primary" onclick="notif('✅ تم حفظ الإعدادات')">حفظ الإعدادات</button>
-        </div>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-head"><h3>👤 صلاحيات المستخدمين</h3></div>
-      <div class="card-body" style="padding:0">
-        <table class="tbl">
-          <tr><th>المستخدم</th><th>الصلاحية</th><th>الحالة</th></tr>
-          <tr><td>منيف السيف</td><td><span class="badge b-red">مسؤول كامل</span></td><td><span class="badge b-green">✓ نشط</span></td></tr>
-          <tr><td>سعد السيف</td><td><span class="badge b-blue">قراءة فقط</span></td><td><span class="badge b-green">✓ نشط</span></td></tr>
-          <tr><td>خالد السيف</td><td><span class="badge b-orange">تعديل محدود</span></td><td><span class="badge b-orange">⏳ معلق</span></td></tr>
-        </table>
-        <div style="padding:12px 16px">
-          <button class="btn btn-outline btn-sm" onclick="notif('➕ إضافة مستخدم جديد...')">➕ إضافة مستخدم</button>
-        </div>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-head"><h3>💾 النسخ الاحتياطي</h3></div>
-      <div class="card-body">
-        <p style="font-size:13px;color:var(--muted);margin-bottom:14px">آخر نسخة احتياطية: تلقائية مع كل تحديث</p>
-        <div style="display:flex;flex-direction:column;gap:8px">
-          <button class="btn btn-outline" onclick="notif('💾 جارٍ إنشاء نسخة احتياطية...')">💾 نسخ احتياطي الآن</button>
-          <button class="btn btn-outline" onclick="notif('📥 تنزيل النسخة الاحتياطية...')">📥 تنزيل النسخة الأخيرة</button>
-          <button class="btn btn-danger" onclick="notif('⚠️ هذا الإجراء يتطلب تأكيداً إضافياً')">🗑️ مسح البيانات التجريبية</button>
-        </div>
-      </div>
-    </div>
-  </div>`;
+  return '<div class="settings-grid">'
+    +'<div class="card"><div class="card-head"><h3>🔒 كلمة المرور</h3></div><div class="card-body">'
+    +'<div style="display:flex;flex-direction:column;gap:12px">'
+    +'<div class="fl"><label>الحالية</label><input type="password" placeholder="••••••••"></div>'
+    +'<div class="fl"><label>الجديدة</label><input type="password" placeholder="8 أحرف"></div>'
+    +'<button class="btn btn-primary" onclick="notif('تم التغيير')">حفظ</button>'
+    +'</div></div></div>'
+    +'<div class="card"><div class="card-head"><h3>📊 إحصائيات</h3></div><div class="card-body">'
+    +'<div style="font-size:13px;display:flex;flex-direction:column;gap:8px">'
+    +'<div>إجمالي: <b>'+DB.length+'</b></div>'
+    +'<div>معتمدون: <b>'+DB.filter(m=>m.approved).length+'</b></div>'
+    +'<div>مراجعة: <b>'+DB.filter(m=>!m.approved).length+'</b></div>'
+    +'</div></div></div>'
+    +'</div>';
 }
+
+const scripts = ['رابط النشر:\n'+SCRIPT_URL,'إنشاء مجلدات Drive تلقائياً','تصدير PDF','محرك الشجرة'];
+function initScriptTabs() { const c=document.getElementById('script-content'); if(c) c.innerHTML=scripts[0]; }
+function switchTab(i) { document.querySelectorAll('.code-tab').forEach((t,idx)=>t.classList.toggle('active',idx===i)); const c=document.getElementById('script-content'); if(c) c.innerHTML=scripts[i]; }
+function copyScript() { navigator.clipboard?.writeText(SCRIPT_URL).then(()=>notif('تم النسخ!')); }
 </script>
 </body>
 </html>
